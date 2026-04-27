@@ -9,7 +9,7 @@ CREATE TABLE "User" (
     "yogaDays" INTEGER NOT NULL DEFAULT 0,
     "currentLevel" INTEGER NOT NULL DEFAULT 1,
     "referralToken" TEXT NOT NULL,
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 -- CreateTable
@@ -19,8 +19,8 @@ CREATE TABLE "Referral" (
     "leadName" TEXT,
     "leadPhone" TEXT,
     "status" TEXT NOT NULL DEFAULT 'CLICKED',
-    "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "convertedAt" DATETIME,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "convertedAt" TIMESTAMP(3),
     CONSTRAINT "Referral_referrerId_fkey" FOREIGN KEY ("referrerId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
@@ -45,8 +45,8 @@ CREATE TABLE "UserCard" (
     "isDuplicate" BOOLEAN NOT NULL DEFAULT false,
     "source" TEXT NOT NULL DEFAULT 'REFERRAL',
     "giftedByUserId" TEXT,
-    "earnedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "scratchedAt" DATETIME,
+    "earnedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "scratchedAt" TIMESTAMP(3),
     CONSTRAINT "UserCard_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "UserCard_cardTemplateId_fkey" FOREIGN KEY ("cardTemplateId") REFERENCES "CardTemplate" ("id") ON DELETE RESTRICT ON UPDATE CASCADE,
     CONSTRAINT "UserCard_giftedByUserId_fkey" FOREIGN KEY ("giftedByUserId") REFERENCES "User" ("id") ON DELETE SET NULL ON UPDATE CASCADE
@@ -58,7 +58,7 @@ CREATE TABLE "LevelProgress" (
     "userId" TEXT NOT NULL,
     "level" INTEGER NOT NULL,
     "isCompleted" BOOLEAN NOT NULL DEFAULT false,
-    "completedAt" DATETIME,
+    "completedAt" TIMESTAMP(3),
     CONSTRAINT "LevelProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User" ("id") ON DELETE RESTRICT ON UPDATE CASCADE
 );
 
