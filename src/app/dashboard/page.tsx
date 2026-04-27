@@ -266,13 +266,13 @@ function DashboardContent() {
             <motion.div initial={{ scale: 0.85, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.85, y: 30 }}
               transition={{ type: 'spring', stiffness: 280, damping: 24 }}
               className="relative bg-gradient-to-br from-sky-950 via-[#080e28] to-indigo-950 border-[3px] border-sky-400 rounded-3xl p-6 max-w-sm w-full card-shadow-blue overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent pointer-events-none" />
               <h3 className="text-white font-black text-lg mb-1 relative z-10">👥 Add Friend</h3>
               <p className="text-white/40 text-xs mb-4 font-semibold relative z-10">Enter their username to send a request</p>
 
               {/* Pending incoming requests */}
               {incoming.length > 0 && (
-                <div className="mb-4 space-y-2">
+                <div className="mb-4 space-y-2 relative z-10">
                   <p className="text-purple-300 text-xs font-bold uppercase tracking-wide">Incoming Requests</p>
                   {incoming.map(req => (
                     <div key={req.friendshipId} className="flex items-center gap-3 bg-white/5 rounded-xl p-3">
@@ -285,9 +285,9 @@ function DashboardContent() {
                         <p className="text-white/40 text-xs">@{req.username} · L{req.currentLevel}</p>
                       </div>
                       <div className="flex gap-1.5">
-                        <button onClick={() => handleFriendResponse(req.friendshipId, 'accept')}
+                        <button onClick={() => { handleFriendResponse(req.friendshipId, 'accept'); setShowAddFriend(false) }}
                           className="px-2 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 text-xs font-bold border border-emerald-400/30">✅</button>
-                        <button onClick={() => handleFriendResponse(req.friendshipId, 'reject')}
+                        <button onClick={() => { handleFriendResponse(req.friendshipId, 'reject'); setShowAddFriend(false) }}
                           className="px-2 py-1 rounded-lg bg-red-500/10 text-red-400 text-xs font-bold border border-red-400/20">✕</button>
                       </div>
                     </div>
