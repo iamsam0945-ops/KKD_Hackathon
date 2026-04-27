@@ -7,7 +7,8 @@ const globalForPrisma = globalThis as unknown as {
 }
 
 function createPrismaClient() {
-  const connectionString = process.env.DATABASE_URL
+  // Use unpooled URL when available (Neon: avoids PgBouncer prepared-statement limitations on writes)
+  const connectionString = process.env.DATABASE_URL_UNPOOLED || process.env.DATABASE_URL
   if (!connectionString) {
     throw new Error('DATABASE_URL is required')
   }

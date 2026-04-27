@@ -161,11 +161,16 @@ function DashboardContent() {
   }
 
   async function handleFriendResponse(friendshipId: string, action: 'accept' | 'reject') {
-    await fetch('/api/friends', {
+    const res = await fetch('/api/friends', {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ friendshipId, action }),
     })
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}))
+      console.error('Friend response failed:', res.status, err)
+      return
+    }
     loadData()
   }
 

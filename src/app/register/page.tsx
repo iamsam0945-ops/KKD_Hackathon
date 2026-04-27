@@ -10,6 +10,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState(1)
+  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -105,15 +106,26 @@ export default function RegisterPage() {
                 {(step === 1 ? fields1 : fields2).map(field => (
                   <div key={field.key}>
                     <label className="text-white/60 text-xs font-black mb-1.5 block uppercase tracking-wider">{field.emoji} {field.label}</label>
-                    <input
-                      type={field.type}
-                      placeholder={field.placeholder}
-                      value={form[field.key as keyof typeof form]}
-                      onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
-                      autoComplete={field.autoComplete}
-                      required
-                      className="w-full bg-white/8 border-2 border-white/15 rounded-2xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-violet-400/70 focus:bg-white/12 transition-all text-sm font-semibold"
-                    />
+                    <div className="relative">
+                      <input
+                        type={field.key === 'password' ? (showPassword ? 'text' : 'password') : field.type}
+                        placeholder={field.placeholder}
+                        value={form[field.key as keyof typeof form]}
+                        onChange={e => setForm(f => ({ ...f, [field.key]: e.target.value }))}
+                        autoComplete={field.autoComplete}
+                        required
+                        className={`w-full bg-white/8 border-2 border-white/15 rounded-2xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-violet-400/70 focus:bg-white/12 transition-all text-sm font-semibold ${field.key === 'password' ? 'pr-12' : ''}`}
+                      />
+                      {field.key === 'password' && (
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(v => !v)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors p-1"
+                        >
+                          {showPassword ? '🙈' : '👁️'}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </motion.div>
