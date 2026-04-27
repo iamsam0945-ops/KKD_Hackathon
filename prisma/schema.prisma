@@ -1,0 +1,102 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id            String   @id @default(uuid())
+  name          String
+  phone         String   @unique
+  username      String   @unique
+  passwordHash  String
+  points        Int      @default(0)
+  yogaDays      Int      @default(0)
+  currentLevel  Int      @default(1)
+  referralToken String   @unique
+  createdAt     DateTime @default(now())
+
+  referralsMade          Referral[]     @relation("Referrer")
+  cardsOwned             UserCard[]     @relation("CardOwner")
+  cardsGiftedOut         UserCard[]     @relation("CardGifter")
+  levelProgress          LevelProgress[]
+  friendRequestsSent     Friendship[]   @relation("FriendRequester")
+  friendRequestsReceived Friendship[]   @relation("FriendReceiver")
+  notifications          Notification[]
+}
+
+model Referral {
+  id          String    @id @default(uuid())
+  referrerId  String
+  referrer    User      @relation("Referrer", fields: [referrerId], references: [id])
+  leadName    String?
+  leadPhone   String?
+  status      String    @default("CLICKED")
+  createdAt   DateTime  @default(now())
+  convertedAt DateTime?
+}
+
+model CardTemplate {
+  id              String  @id @default(uuid())
+  level           Int
+  name            String
+  description     String
+  imageEmoji      String
+  rarity          String  @default("COMMON")
+  dropWeight      Int     @default(100)
+  isNextLevelBonus Boolean @default(false)
+
+  userCards UserCard[]
+}
+
+model UserCard {
+  id             String       @id @default(uuid())
+  userId         String
+  user           User         @relation("CardOwner", fields: [userId], references: [id])
+  cardTemplateId String
+  cardTemplate   CardTemplate @relation(fields: [cardTemplateId], references: [id])
+  status         String       @default("UNSCRATCHED")
+  isDuplicate    Boolean      @default(false)
+  source         String       @default("REFERRAL")
+  giftedByUserId String?
+  giftedByUser   User?        @relation("CardGifter", fields: [giftedByUserId], references: [id])
+  earnedAt       DateTime     @default(now())
+  scratchedAt    DateTime?
+}
+
+model LevelProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id])
+  level       Int
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+
+  @@unique([userId, level])
+}
+
+model Friendship {
+  id          String   @id @default(uuid())
+  requesterId String
+  receiverId  String
+  status      String   @default("PENDING")
+  createdAt   DateTime @default(now())
+
+  requester User @relation("FriendRequester", fields: [requesterId], references: [id])
+  receiver  User @relation("FriendReceiver",  fields: [receiverId],  references: [id])
+
+  @@unique([requesterId, receiverId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  type      String   // LEVEL_UP | FRIEND_ACCEPTED | FRIEND_REJECTED | CARD_RECEIVED | CARD_REQUEST
+  title     String
+  body      String   // For CARD_REQUEST: "Display text||{json metadata}"
+  read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

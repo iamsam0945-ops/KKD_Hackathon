@@ -1,26 +1,115 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0d0a24;
+  --foreground: #ffffff;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-nunito);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-nunito), sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  overflow-x: hidden;
+}
+
+/* ── Blob ── */
+@keyframes blob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33%       { transform: translate(40px, -50px) scale(1.15); }
+  66%       { transform: translate(-30px, 30px) scale(0.88); }
+}
+
+/* ── Float ── */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  33%       { transform: translateY(-14px) rotate(5deg); }
+  66%       { transform: translateY(-7px) rotate(-5deg); }
+}
+
+/* ── Sparkle ── */
+@keyframes sparkle {
+  0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+  50%       { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+/* ── Shimmer sweep ── */
+@keyframes shimmer {
+  0%   { background-position: -300% center; }
+  100% { background-position: 300% center; }
+}
+
+/* ── Rainbow border ── */
+@keyframes rainbow {
+  0%   { border-color: #f472b6; box-shadow: 0 0 18px 4px rgba(244,114,182,0.45); }
+  25%  { border-color: #818cf8; box-shadow: 0 0 18px 4px rgba(129,140,248,0.45); }
+  50%  { border-color: #34d399; box-shadow: 0 0 18px 4px rgba(52,211,153,0.45); }
+  75%  { border-color: #fbbf24; box-shadow: 0 0 18px 4px rgba(251,191,36,0.45); }
+  100% { border-color: #f472b6; box-shadow: 0 0 18px 4px rgba(244,114,182,0.45); }
+}
+
+/* ── Bounce in ── */
+@keyframes bounceIn {
+  0%   { transform: scale(0.3); opacity: 0; }
+  50%  { transform: scale(1.07); }
+  70%  { transform: scale(0.96); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Wiggle ── */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(0deg); }
+  20%       { transform: rotate(-8deg); }
+  40%       { transform: rotate(8deg); }
+  60%       { transform: rotate(-5deg); }
+  80%       { transform: rotate(5deg); }
+}
+
+/* ── Progress shimmer ── */
+@keyframes progressShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+
+.animate-blob      { animation: blob 9s ease-in-out infinite; }
+.animate-float     { animation: float 5s ease-in-out infinite; }
+.animate-sparkle   { animation: sparkle 2.2s ease-in-out infinite; }
+.animate-wiggle    { animation: wiggle 0.6s ease-in-out; }
+.animate-bounce-in { animation: bounceIn 0.55s cubic-bezier(0.36, 0.07, 0.19, 0.97) both; }
+.animate-rainbow   { animation: rainbow 3s linear infinite; }
+
+/* Shimmer text */
+.shimmer-text {
+  background: linear-gradient(90deg, #f472b6, #fbbf24, #34d399, #818cf8, #f472b6);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* Animated rainbow progress bar */
+.progress-animated {
+  background: linear-gradient(90deg, #f472b6, #818cf8, #60a5fa, #34d399, #fbbf24, #f472b6);
+  background-size: 300% 100%;
+  animation: progressShimmer 2.5s linear infinite;
+}
+
+/* Cartoon card shadows */
+.card-shadow-violet { box-shadow: 0 6px 0 rgba(139,92,246,0.6),  0 0 28px rgba(139,92,246,0.35); }
+.card-shadow-blue   { box-shadow: 0 6px 0 rgba(56,189,248,0.6),  0 0 28px rgba(56,189,248,0.35); }
+.card-shadow-gold   { box-shadow: 0 6px 0 rgba(251,191,36,0.65), 0 0 35px rgba(251,191,36,0.45); }
+
+/* Scrollbar */
+::-webkit-scrollbar       { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(#f472b6, #818cf8);
+  border-radius: 2px;
 }
