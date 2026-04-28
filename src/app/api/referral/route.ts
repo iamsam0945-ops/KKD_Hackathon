@@ -75,6 +75,8 @@ const DUPLICATE_INJECTION_RATE: Record<number, number> = {
   10: 0.75, // 75% — trading machines at the top
 }
 
+const DUPLICATES_ALLOWED_FROM_LEVEL = 2
+
 // When injecting a forced duplicate, strongly bias toward COMMON.
 // RARE/EPIC dupes remain rare and feel genuinely lucky.
 const DUP_RARITY_WEIGHT: Record<string, number> = {
@@ -99,6 +101,7 @@ export async function grantScratchCard(userId: string, level: number, source: st
   // Level-specific pool (fallback: global)
   const levelTemplates = allTemplates.filter(t => t.level === level)
   const pool = levelTemplates.length > 0 ? levelTemplates : allTemplates
+  const poolTemplateIds = pool.map((t) => t.id)
 
   // What the user already has scratched (unique non-duplicate)
   const existingScratched = await prisma.userCard.findMany({
@@ -107,10 +110,20 @@ export async function grantScratchCard(userId: string, level: number, source: st
   })
   const scratchedTemplateIds = new Set(existingScratched.map(c => c.cardTemplateId))
   const ownedTemplates = existingScratched.map(c => c.cardTemplate)
+  const duplicateGuardOwned = await prisma.userCard.findMany({
+    where: {
+      userId,
+      cardTemplateId: { in: poolTemplateIds },
+    },
+    select: { cardTemplateId: true },
+  })
+  const ownedTemplateIds = new Set(duplicateGuardOwned.map((c) => c.cardTemplateId))
+  const allowDuplicates = level >= DUPLICATES_ALLOWED_FROM_LEVEL
 
   // Roll: should this card be a forced duplicate?
   const dupRate = DUPLICATE_INJECTION_RATE[level] ?? 0.30
-  const forceDuplicate = Math.random() < dupRate && ownedTemplates.length > 0
+  const forceDuplicate =
+    allowDuplicates && Math.random() < dupRate && ownedTemplates.length > 0
 
   let selectedTemplate = pool[0]
   let isDuplicate = false
@@ -127,8 +140,11 @@ export async function grantScratchCard(userId: string, level: number, source: st
     }
     isDuplicate = true
   } else {
-    // Normal draw: prefer cards user doesn't have yet, with level-scaled weights
-    const freshPool = pool.filter(t => !scratchedTemplateIds.has(t.id))
+    // Before Level 2, block duplicate assignment even for unscratch cards.
+    // After Level 2, original "fresh vs scratched" behavior remains.
+    const freshPool = allowDuplicates
+      ? pool.filter((t) => !scratchedTemplateIds.has(t.id))
+      : pool.filter((t) => !ownedTemplateIds.has(t.id))
     const activePool = freshPool.length > 0 ? freshPool : pool
 
     const totalWeight = activePool.reduce(
@@ -139,7 +155,9 @@ export async function grantScratchCard(userId: string, level: number, source: st
       rand -= scaledWeight(t.dropWeight, t.rarity, level)
       if (rand <= 0) { selectedTemplate = t; break }
     }
-    isDuplicate = scratchedTemplateIds.has(selectedTemplate.id)
+    isDuplicate = allowDuplicates
+      ? scratchedTemplateIds.has(selectedTemplate.id)
+      : ownedTemplateIds.has(selectedTemplate.id)
   }
 
   const card = await prisma.userCard.create({
