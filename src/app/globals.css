@@ -200,6 +200,16 @@ body {
   background: linear-gradient(180deg, #1e0a5e 0%, #150838 30%, #0d0824 70%, #0a1420 100%);
 }
 
+/* === Cinematic card vignette === */
+@keyframes vignette-breathe {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.9; }
+}
+.card-vignette {
+  background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.85) 100%);
+  animation: vignette-breathe 4s ease-in-out infinite;
+}
+
 /* === Scrollbar === */
 ::-webkit-scrollbar { width: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
