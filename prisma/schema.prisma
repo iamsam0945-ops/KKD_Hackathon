@@ -25,6 +25,7 @@ model User {
   friendRequestsSent     Friendship[]   @relation("FriendRequester")
   friendRequestsReceived Friendship[]   @relation("FriendReceiver")
   notifications          Notification[]
+  redemptions            Redemption[]
 }
 
 model Referral {
@@ -99,4 +100,20 @@ model Notification {
   body      String   // For CARD_REQUEST: "Display text||{json metadata}"
   read      Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model Redemption {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  productId   String
+  pointsSpent Int
+  redeemedAt  DateTime @default(now())
+  // Shipping (null for digital)
+  shipName    String?
+  shipPhone   String?
+  shipAddress String?
+  shipCity    String?
+  shipState   String?
+  shipPincode String?
 }

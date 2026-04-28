@@ -96,8 +96,8 @@ export default function LevelProgress({currentLevel,uniqueCollected,uniqueNeeded
           </div>
           <div className="grid grid-cols-3 gap-2 mt-4">
             {[
-              {label:'pts earned',value:completedLevels.reduce((s,l)=>s+(l%5===0?1000:l*50),0),color:'text-amber-400'},
-              {label:'yoga days',value:completedLevels.reduce((s,l)=>s+(l%5===0?l*7+30:l*7),0),color:'text-emerald-400'},
+              {label:'pts earned',value:completedLevels.reduce((s,l)=>s+(l%5===0?2000:l*100),0),color:'text-amber-400'},
+              {label:'yoga days',value:completedLevels.reduce((s,l)=>s+(l%5===0?l*14+60:l*14),0),color:'text-emerald-400'},
               {label:'bonus lvls',value:completedLevels.filter(l=>l%5===0).length,color:'text-violet-400'},
             ].map(stat=>(
               <div key={stat.label} className="text-center">

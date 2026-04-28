@@ -56,12 +56,12 @@ export default function FlipCard({ name, emoji, rarity, collected, source }: Fli
   return (
     <div
       className="relative w-full aspect-[3/4] cursor-pointer select-none"
-      style={{ perspective: '1000px' }}
+      style={{ perspective: '1000px', WebkitPerspective: '1000px' }}
       onClick={() => { if (collected) setFlipped(f => !f) }}
     >
       <motion.div
         className="relative w-full h-full"
-        style={{ transformStyle: 'preserve-3d' }}
+        style={{ transformStyle: 'preserve-3d', WebkitTransformStyle: 'preserve-3d' }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
       >

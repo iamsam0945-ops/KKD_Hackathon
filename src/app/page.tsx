@@ -16,7 +16,7 @@ export default function HomePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-[#0d0824] flex flex-col items-center justify-center px-5 overflow-hidden relative">
+    <div className="min-h-screen bg-[#fdf8ff] flex flex-col items-center justify-center px-5 overflow-hidden relative">
 
       {/* Atmospheric blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
