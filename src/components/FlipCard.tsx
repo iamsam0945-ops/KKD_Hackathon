@@ -56,12 +56,12 @@ export default function FlipCard({ name, emoji, rarity, collected, source }: Fli
   return (
     <div
       className="relative w-full aspect-[3/4] cursor-pointer select-none"
-      style={{ perspective: '1000px', WebkitPerspective: '1000px' }}
+      style={{ perspective: '1000px', WebkitPerspective: '1000px', transform: 'translateZ(0)' }}
       onClick={() => { if (collected) setFlipped(f => !f) }}
     >
       <motion.div
         className="relative w-full h-full"
-        style={{ transformStyle: 'preserve-3d', WebkitTransformStyle: 'preserve-3d' }}
+        style={{ transformStyle: 'preserve-3d', WebkitTransformStyle: 'preserve-3d', willChange: 'transform' }}
         animate={{ rotateY: flipped ? 180 : 0 }}
         transition={{ duration: 0.55, ease: [0.4, 0, 0.2, 1] }}
       >
@@ -71,6 +71,8 @@ export default function FlipCard({ name, emoji, rarity, collected, source }: Fli
           className={`absolute inset-0 rounded-3xl border-2 overflow-hidden ${r.border} ${collected ? `shadow-2xl ${r.glow}` : ''}`}
           style={{
             backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(0deg) translateZ(0)',
             background: 'linear-gradient(160deg,#080412 0%,#130930 45%,#060310 100%)',
             opacity: collected ? 1 : 0.55,
           }}
@@ -209,7 +211,12 @@ export default function FlipCard({ name, emoji, rarity, collected, source }: Fli
         {/* ── BACK — Details ── */}
         <div
           className="absolute inset-0 rounded-3xl border-2 border-violet-500/50 flex flex-col p-3 gap-2 shadow-lg shadow-violet-500/30"
-          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', background: 'linear-gradient(160deg,#1e0a5e 0%,#150838 60%,#0d0824 100%)' }}
+          style={{
+            backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg) translateZ(0)',
+            background: 'linear-gradient(160deg,#1e0a5e 0%,#150838 60%,#0d0824 100%)',
+          }}
         >
           <div className="flex items-center gap-2">
             <span className="text-xl">{emoji}</span>

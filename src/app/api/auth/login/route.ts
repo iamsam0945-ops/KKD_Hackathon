@@ -2,12 +2,19 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { signToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
+import { normalizePhone } from '@/lib/phone'
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone } = await request.json()
+    const { phone, countryCode } = await request.json()
+    const normalizedPhone = normalizePhone(phone, countryCode)
+    if (!normalizedPhone) {
+      return NextResponse.json({ error: 'Please enter a valid phone number' }, { status: 400 })
+    }
 
-    const user = await prisma.user.findUnique({ where: { phone } })
+    const user = await prisma.user.findFirst({
+      where: { OR: [{ phone: normalizedPhone }, { phone }] },
+    })
     if (!user) return NextResponse.json({ error: 'No account found with that phone number' }, { status: 401 })
 
     const token = signToken({ userId: user.id, username: user.username })

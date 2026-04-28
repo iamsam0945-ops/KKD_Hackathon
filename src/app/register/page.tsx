@@ -3,10 +3,21 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import Link from 'next/link'
+import { sanitizePhoneInput } from '@/lib/phone'
+
+const COUNTRY_CODES = [
+  { label: 'India', code: '+91' },
+  { label: 'United States', code: '+1' },
+  { label: 'United Kingdom', code: '+44' },
+  { label: 'United Arab Emirates', code: '+971' },
+  { label: 'Canada', code: '+1' },
+  { label: 'Australia', code: '+61' },
+  { label: 'Singapore', code: '+65' },
+]
 
 export default function RegisterPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ name: '', phone: '', username: '' })
+  const [form, setForm] = useState({ name: '', phone: '', countryCode: '+91', username: '' })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [step, setStep] = useState(1)
@@ -14,7 +25,11 @@ export default function RegisterPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setLoading(true); setError('')
     try {
-      const res = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(form) })
+      const payload = {
+        ...form,
+        phone: sanitizePhoneInput(form.phone),
+      }
+      const res = await fetch('/api/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
       router.push('/dashboard?welcome=1')
@@ -59,7 +74,6 @@ export default function RegisterPage() {
                 <p className="text-violet-200/70 text-xs text-center font-bold uppercase tracking-wider">Step 1 of 2</p>
                 {[
                   {key:'name', label:'👤 Full Name', placeholder:'Arjun Sharma', type:'text'},
-                  {key:'phone', label:'📱 Phone Number', placeholder:'9876543210', type:'tel'},
                 ].map(f => (
                   <div key={f.key}>
                     <label className="text-violet-200 text-xs font-black uppercase tracking-wider mb-2 block">{f.label}</label>
@@ -68,6 +82,31 @@ export default function RegisterPage() {
                       className="pastel-input" />
                   </div>
                 ))}
+                <div>
+                  <label className="text-violet-200 text-xs font-black uppercase tracking-wider mb-2 block">🌍 Country & Phone</label>
+                  <div className="grid grid-cols-[130px_1fr] gap-2">
+                    <select
+                      value={form.countryCode}
+                      onChange={e => setForm(p => ({ ...p, countryCode: e.target.value }))}
+                      className="pastel-input"
+                    >
+                      {COUNTRY_CODES.map((country) => (
+                        <option key={`${country.label}-${country.code}`} value={country.code}>
+                          {country.label} ({country.code})
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      placeholder="9876543210"
+                      value={form.phone}
+                      onChange={e => setForm(p => ({ ...p, phone: sanitizePhoneInput(e.target.value) }))}
+                      required
+                      className="pastel-input"
+                    />
+                  </div>
+                  <p className="text-violet-300/70 text-[10px] mt-1">We store this as an international number.</p>
+                </div>
                 <motion.button whileTap={{y:4,boxShadow:'0 1px 0 #4c1d95'}} type="submit"
                   className="btn-candy-violet w-full py-4 text-base mt-2">Continue →</motion.button>
               </motion.form>

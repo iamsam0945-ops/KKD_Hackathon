@@ -3,10 +3,22 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
+import { sanitizePhoneInput } from '@/lib/phone'
+
+const COUNTRY_CODES = [
+  { label: 'India', code: '+91' },
+  { label: 'United States', code: '+1' },
+  { label: 'United Kingdom', code: '+44' },
+  { label: 'United Arab Emirates', code: '+971' },
+  { label: 'Canada', code: '+1' },
+  { label: 'Australia', code: '+61' },
+  { label: 'Singapore', code: '+65' },
+]
 
 export default function LoginPage() {
   const router = useRouter()
   const [phone, setPhone] = useState('')
+  const [countryCode, setCountryCode] = useState('+91')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
@@ -15,7 +27,7 @@ export default function LoginPage() {
     try {
       const res = await fetch('/api/auth/login', {
         method: 'POST', headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone: sanitizePhoneInput(phone), countryCode }),
       })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
@@ -48,13 +60,26 @@ export default function LoginPage() {
         <div className="candy-card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-violet-200 text-xs font-black uppercase tracking-wider mb-2 block">📱 Phone Number</label>
-              <input
-                type="tel" placeholder="9876543210"
-                value={phone} onChange={e => setPhone(e.target.value)}
-                required
-                className="pastel-input"
-              />
+              <label className="text-violet-200 text-xs font-black uppercase tracking-wider mb-2 block">📱 Country & Phone Number</label>
+              <div className="grid grid-cols-[130px_1fr] gap-2">
+                <select
+                  value={countryCode}
+                  onChange={e => setCountryCode(e.target.value)}
+                  className="pastel-input"
+                >
+                  {COUNTRY_CODES.map((country) => (
+                    <option key={`${country.label}-${country.code}`} value={country.code}>
+                      {country.label} ({country.code})
+                    </option>
+                  ))}
+                </select>
+                <input
+                  type="tel" placeholder="9876543210"
+                  value={phone} onChange={e => setPhone(sanitizePhoneInput(e.target.value))}
+                  required
+                  className="pastel-input"
+                />
+              </div>
             </div>
             {error && (
               <motion.p initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}}

@@ -6,17 +6,22 @@ import yogaPoses from '@/lib/yogaPoses'
 import { grantScratchCard } from '@/app/api/referral/route'
 import { v4 as uuidv4 } from 'uuid'
 import { cookies } from 'next/headers'
+import { normalizePhone } from '@/lib/phone'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, username, referralToken: incomingReferralToken } = await request.json()
+    const { name, phone, countryCode, username, referralToken: incomingReferralToken } = await request.json()
+    const normalizedPhone = normalizePhone(phone, countryCode)
 
     if (!name || !phone || !username) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
     }
+    if (!normalizedPhone) {
+      return NextResponse.json({ error: 'Please enter a valid phone number' }, { status: 400 })
+    }
 
     const existing = await prisma.user.findFirst({
-      where: { OR: [{ phone }, { username }] }
+      where: { OR: [{ phone: normalizedPhone }, { username }] }
     })
     if (existing) {
       return NextResponse.json({ error: 'Phone or username already taken' }, { status: 409 })
@@ -27,7 +32,7 @@ export async function POST(request: NextRequest) {
     const myReferralToken = uuidv4().replace(/-/g, '').slice(0, 12)
 
     const user = await prisma.user.create({
-      data: { name, phone, username, passwordHash, referralToken: myReferralToken }
+      data: { name, phone: normalizedPhone, username, passwordHash, referralToken: myReferralToken }
     })
 
     // Seed ALL card templates; update weights/rarity if changed
@@ -54,7 +59,7 @@ export async function POST(request: NextRequest) {
       if (referrer && referrer.id !== user.id) {
         // Create referral record
         await prisma.referral.create({
-          data: { referrerId: referrer.id, leadName: name, leadPhone: phone, status: 'REWARDED', convertedAt: new Date() }
+          data: { referrerId: referrer.id, leadName: name, leadPhone: normalizedPhone, status: 'REWARDED', convertedAt: new Date() }
         })
         // Give referrer a scratch card using level-aware duplicate injection
         await grantScratchCard(referrer.id, referrer.currentLevel, 'REFERRAL')
