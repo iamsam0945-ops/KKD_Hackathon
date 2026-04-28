@@ -26,8 +26,6 @@ interface CardData {
 interface FriendData { id: string; name: string; username: string; currentLevel: number; points: number; friendshipId: string }
 interface FriendRequest { id: string; name: string; username: string; currentLevel: number; friendshipId: string }
 interface NotificationData { id: string; type: string; title: string; body: string; read: boolean; createdAt: string }
-interface ShopProduct { id: string; name: string; description: string; emoji: string; category: string; pointCost: number; rarity: string; digital: boolean; downloadPath?: string }
-interface ShopRedemption { id: string; productId: string; pointsSpent: number; redeemedAt: string }
 
 const FRIEND_COLORS = ['#a78bfa','#f472b6','#34d399','#fbbf24','#60a5fa','#c084fc','#22d3ee','#fb923c']
 function avatarColor(name: string) {
@@ -55,7 +53,7 @@ function DashboardContent() {
   const [cards, setCards] = useState<CardData[]>([])
   const [friends, setFriends] = useState<FriendData[]>([])
   const [incoming, setIncoming] = useState<FriendRequest[]>([])
-  const [tab, setTab] = useState<'home' | 'scratch' | 'collection' | 'map' | 'notifications' | 'shop'>('home')
+  const [tab, setTab] = useState<'home' | 'scratch' | 'collection' | 'map' | 'notifications'>('home')
   const [notifications, setNotifications] = useState<NotificationData[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
 
@@ -81,27 +79,18 @@ function DashboardContent() {
   const [giftingNotifId, setGiftingNotifId] = useState<string | null>(null)
   const [giftedNotifIds, setGiftedNotifIds] = useState<Set<string>>(new Set())
 
-  const [shopProducts, setShopProducts] = useState<ShopProduct[]>([])
-  const [shopRedemptions, setShopRedemptions] = useState<ShopRedemption[]>([])
-  const [confirmProduct, setConfirmProduct] = useState<ShopProduct | null>(null)
-  const [shopLoading, setShopLoading] = useState(false)
-  const [redeemStep, setRedeemStep] = useState<'confirm' | 'address'>('confirm')
-  const [addressFields, setAddressFields] = useState({ name: '', phone: '', address: '', city: '', state: '', pincode: '' })
-  const [downloadReady, setDownloadReady] = useState<{ name: string; emoji: string; path: string } | null>(null)
-
   async function loadData() {
-    const [meRes, levelRes, cardsRes, friendsRes, notifRes, shopRes] = await Promise.all([
+    const [meRes, levelRes, cardsRes, friendsRes, notifRes] = await Promise.all([
       fetch('/api/auth/me'), fetch('/api/levels'), fetch('/api/cards'),
-      fetch('/api/friends'), fetch('/api/notifications'), fetch('/api/shop'),
+      fetch('/api/friends'), fetch('/api/notifications'),
     ])
     if (!meRes.ok) { router.push('/login'); return }
-    const [me, level, cardsData, friendsData, notifData, shopData] = await Promise.all([
-      meRes.json(), levelRes.json(), cardsRes.json(), friendsRes.json(), notifRes.json(), shopRes.json()
+    const [me, level, cardsData, friendsData, notifData] = await Promise.all([
+      meRes.json(), levelRes.json(), cardsRes.json(), friendsRes.json(), notifRes.json()
     ])
     setUser(me.user); setLevelData(level); setCards(cardsData.cards)
     setFriends(friendsData.friends ?? []); setIncoming(friendsData.incoming ?? [])
     setNotifications(notifData.notifications ?? []); setUnreadCount(notifData.unreadCount ?? 0)
-    setShopProducts(shopData.products ?? []); setShopRedemptions(shopData.redemptions ?? [])
   }
 
   useEffect(() => { loadData() }, [])
@@ -111,8 +100,6 @@ function DashboardContent() {
     fetch(`/api/cards/friends-with-duplicate?cardName=${encodeURIComponent(requestCardName)}`)
       .then(r => r.json()).then(d => setFriendsWithDuplicate(d.friends ?? [])).catch(() => setFriendsWithDuplicate([]))
   }, [requestCardName])
-
-  useEffect(() => { setRedeemStep('confirm') }, [confirmProduct])
 
   async function handleLogout() {
     await fetch('/api/auth/logout', { method: 'POST' })
@@ -190,49 +177,26 @@ function DashboardContent() {
     setRequestLoadingId(null)
   }
 
-  async function handleRedeem(product: ShopProduct, address?: typeof addressFields) {
-    setShopLoading(true)
-    try {
-      const payload: Record<string, unknown> = { productId: product.id }
-      if (address) payload.shippingAddress = address
-      const res = await fetch('/api/shop', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      })
-      if (res.ok) {
-        const data = await res.json()
-        setUser(prev => prev ? { ...prev, points: data.points } : prev)
-        setShopRedemptions(prev => [data.redemption, ...prev])
-        if (product.downloadPath) {
-          setDownloadReady({ name: product.name, emoji: product.emoji, path: product.downloadPath })
-        }
-        setConfirmProduct(null)
-        setRedeemStep('confirm')
-        setAddressFields({ name: '', phone: '', address: '', city: '', state: '', pincode: '' })
-      }
-    } finally { setShopLoading(false) }
-  }
-
   const unscratchedCards = cards.filter(c => c.status === 'UNSCRATCHED')
   const scratchedCards   = cards.filter(c => c.status === 'SCRATCHED')
   const duplicateCards   = scratchedCards.filter(c => c.isDuplicate)
 
   if (!user || !levelData) {
     return (
-      <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0824] flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="text-4xl">🧘</motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[#fdf8ff] pb-24">
+    <div className="min-h-screen bg-[#0d0824] pb-24">
 
       {/* ── Welcome Modal ── */}
       <AnimatePresence>
         {showWelcome && unscratchedCards.length > 0 && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-purple-950/40 backdrop-blur-sm">
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.7, y: 30 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.7, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 24, bounce: 0.5 }}
               className="candy-card p-7 max-w-sm w-full text-center">
@@ -258,7 +222,7 @@ function DashboardContent() {
       <AnimatePresence>
         {showAddFriend && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-purple-950/40 backdrop-blur-sm">
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.85, y: 24 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.85, y: 24 }}
               transition={{ type: 'spring', stiffness: 280, damping: 26 }}
               className="candy-card p-6 max-w-sm w-full">
@@ -270,7 +234,7 @@ function DashboardContent() {
                   <p className="text-violet-400 text-xs font-black uppercase tracking-wide">Incoming Requests</p>
                   {incoming.map(req => (
                     <div key={req.friendshipId} className="flex items-center gap-3 rounded-2xl p-3"
-                      style={{background:'rgba(255,255,255,0.15)',border:'2px solid rgba(196,181,253,0.35)'}}>
+                      style={{background:'rgba(0,0,0,0.3)',border:'2px solid rgba(139,92,246,0.25)'}}>
                       <div className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-black text-white shrink-0"
                         style={{ background: avatarColor(req.name), boxShadow:`0 0 10px ${avatarColor(req.name)}88` }}>
                         {req.name[0]}
@@ -295,13 +259,13 @@ function DashboardContent() {
               <input type="text" placeholder="e.g. arjun_yoga"
                 value={addUsername} onChange={e => setAddUsername(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && handleAddFriend()}
-                className="pastel-input mb-3" />
+                className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold mb-3" />
               {addMsg && (
                 <p className={`text-xs text-center mb-3 font-black ${addMsg.includes('sent') ? 'text-emerald-400' : 'text-red-400'}`}>{addMsg}</p>
               )}
               <div className="flex gap-2">
                 <motion.button whileTap={{y:3}} onClick={() => { setShowAddFriend(false); setAddMsg('') }}
-                  className="flex-1 py-3 rounded-2xl border-2 border-violet-300/50 text-violet-100 text-sm font-black bg-white/10">Close</motion.button>
+                  className="flex-1 py-3 rounded-2xl border-2 border-violet-500/40 text-violet-300 text-sm font-black bg-black/20">Close</motion.button>
                 <motion.button whileTap={{y:5,boxShadow:'0 1px 0 #3b0764'}} onClick={handleAddFriend} disabled={addLoading || !addUsername.trim()}
                   className="flex-1 btn-candy-violet py-3 text-sm disabled:opacity-50">
                   {addLoading ? '...' : 'Send Request'}
@@ -316,13 +280,13 @@ function DashboardContent() {
       <AnimatePresence>
         {giftCard && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-purple-950/40 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
             onClick={() => { setGiftCard(null); setGiftSentId(null) }}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               onClick={e => e.stopPropagation()}
               className="rounded-t-3xl p-5 w-full max-w-lg max-h-[70vh] flex flex-col"
-              style={{background:'linear-gradient(180deg,#7c5cbf 0%,#6a48af 50%,#5a3a9e 100%)',border:'2px solid rgba(196,181,253,0.5)',borderBottom:'none'}}>
+              style={{background:'linear-gradient(180deg,#2d1b69 0%,#1e0f4a 50%,#130930 100%)',border:'2px solid rgba(167,139,250,0.35)',borderBottom:'none'}}>
               <div className="w-10 h-1 rounded-full bg-violet-400/30 mx-auto mb-4" />
               <h3 className="text-white font-black text-base mb-0.5">🎁 Gift Card</h3>
               <p className="text-violet-400/60 text-xs mb-4 font-semibold">
@@ -343,7 +307,7 @@ function DashboardContent() {
                     const isLoading = giftLoadingId === f.id
                     return (
                       <div key={f.id} className="flex items-center gap-3 rounded-2xl p-3"
-                        style={{background:'rgba(255,255,255,0.14)',border:'2px solid rgba(196,181,253,0.3)'}}>
+                        style={{background:'rgba(0,0,0,0.3)',border:'2px solid rgba(139,92,246,0.2)'}}>
                         <div className="w-11 h-11 rounded-full flex items-center justify-center text-base font-black text-white shrink-0"
                           style={{ background: avatarColor(f.name), boxShadow:`0 0 12px ${avatarColor(f.name)}66` }}>{f.name[0]}</div>
                         <div className="flex-1 min-w-0">
@@ -365,7 +329,7 @@ function DashboardContent() {
                 </div>
               )}
               <motion.button whileTap={{y:3}} onClick={() => { setGiftCard(null); setGiftSentId(null) }}
-                className="mt-3 w-full py-3 rounded-2xl border-2 border-violet-300/40 text-violet-100 text-sm font-black bg-white/10">
+                className="mt-3 w-full py-3 rounded-2xl border-2 border-violet-500/30 text-violet-400 text-sm font-black bg-black/20">
                 Cancel
               </motion.button>
             </motion.div>
@@ -377,16 +341,16 @@ function DashboardContent() {
       <AnimatePresence>
         {requestCardName !== null && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-end justify-center bg-purple-950/40 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 backdrop-blur-sm"
             onClick={() => { setRequestCardName(null); setRequestSentId(null); setFriendsWithDuplicate([]) }}>
             <motion.div initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 320 }}
               onClick={e => e.stopPropagation()}
               className="rounded-t-3xl p-5 w-full max-w-lg max-h-[75vh] flex flex-col"
-              style={{background:'linear-gradient(180deg,#7c5cbf 0%,#6a48af 50%,#5a3a9e 100%)',border:'2px solid rgba(196,181,253,0.5)',borderBottom:'none'}}>
+              style={{background:'linear-gradient(180deg,#2d1b69 0%,#1e0f4a 50%,#130930 100%)',border:'2px solid rgba(167,139,250,0.35)',borderBottom:'none'}}>
               <div className="w-10 h-1 rounded-full bg-violet-400/30 mx-auto mb-4" />
               <div className="flex items-center gap-3 rounded-2xl p-3 mb-4"
-                style={{background:'rgba(255,255,255,0.2)',border:'2px solid rgba(196,181,253,0.4)'}}>
+                style={{background:'rgba(139,92,246,0.15)',border:'2px solid rgba(139,92,246,0.3)'}}>
                 <span className="text-3xl">{requestCardEmoji}</span>
                 <div>
                   <p className="text-violet-400 text-[10px] uppercase tracking-wider font-black">I need this card</p>
@@ -442,7 +406,7 @@ function DashboardContent() {
                 </div>
               )}
               <motion.button whileTap={{y:3}} onClick={() => { setRequestCardName(null); setRequestSentId(null); setFriendsWithDuplicate([]) }}
-                className="mt-3 w-full py-3 rounded-2xl border-2 border-violet-300/40 text-violet-100 text-sm font-black bg-white/10">
+                className="mt-3 w-full py-3 rounded-2xl border-2 border-violet-500/30 text-violet-400 text-sm font-black bg-black/20">
                 Cancel
               </motion.button>
             </motion.div>
@@ -450,147 +414,8 @@ function DashboardContent() {
         )}
       </AnimatePresence>
 
-      {/* ── Shop Confirm Modal ── */}
-      <AnimatePresence>
-        {confirmProduct && redeemStep === 'confirm' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-purple-950/40 backdrop-blur-sm"
-            onClick={() => !shopLoading && setConfirmProduct(null)}>
-            <motion.div initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-              onClick={e => e.stopPropagation()}
-              className="candy-card p-6 max-w-sm w-full text-center">
-              <div className="text-5xl mb-3">{confirmProduct.emoji}</div>
-              <h3 className="text-white font-black text-lg mb-1">{confirmProduct.name}</h3>
-              <p className="text-violet-300/60 text-xs mb-4 font-semibold">{confirmProduct.description}</p>
-              {!confirmProduct.digital && (
-                <div className="rounded-2xl p-2.5 mb-3 flex items-center gap-2" style={{background:'rgba(99,102,241,0.1)',border:'1.5px solid rgba(99,102,241,0.3)'}}>
-                  <span className="text-base">📦</span>
-                  <p className="text-indigo-300 text-xs font-semibold">Physical item — we&apos;ll ship it to your address</p>
-                </div>
-              )}
-              <div className="rounded-2xl p-3 mb-4" style={{background:'rgba(251,191,36,0.1)',border:'2px solid rgba(251,191,36,0.3)'}}>
-                <p className="text-amber-300 font-black text-sm">Costs: {confirmProduct.pointCost} pts</p>
-                <p className="text-amber-500/60 text-xs mt-0.5 font-semibold">
-                  Your balance: {user?.points ?? 0} → {(user?.points ?? 0) - confirmProduct.pointCost} pts
-                </p>
-              </div>
-              <div className="flex gap-2">
-                <motion.button whileTap={{y:3}} onClick={() => setConfirmProduct(null)} disabled={shopLoading}
-                  className="flex-1 py-3 rounded-2xl border-2 border-violet-300/50 text-violet-100 text-sm font-black bg-white/10 disabled:opacity-50">
-                  Cancel
-                </motion.button>
-                {confirmProduct.digital ? (
-                  <motion.button whileTap={{y:5,boxShadow:'0 1px 0 #92400e'}} onClick={() => handleRedeem(confirmProduct, undefined)} disabled={shopLoading}
-                    className="flex-1 btn-candy-gold py-3 text-sm disabled:opacity-50">
-                    {shopLoading ? '✨ Redeeming…' : '✨ Confirm Redeem'}
-                  </motion.button>
-                ) : (
-                  <motion.button whileTap={{y:5,boxShadow:'0 1px 0 #3b0764'}} onClick={() => setRedeemStep('address')} disabled={shopLoading}
-                    className="flex-1 btn-candy-violet py-3 text-sm disabled:opacity-50">
-                    📦 Enter Address →
-                  </motion.button>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Shop Address Modal ── */}
-      <AnimatePresence>
-        {confirmProduct && redeemStep === 'address' && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-purple-950/40 backdrop-blur-sm"
-            onClick={() => !shopLoading && setRedeemStep('confirm')}>
-            <motion.div initial={{ scale: 0.85, y: 24 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.85, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-              onClick={e => e.stopPropagation()}
-              className="candy-card p-6 max-w-sm w-full">
-              <div className="flex items-center gap-2 mb-4">
-                <motion.button whileTap={{x:-2}} onClick={() => setRedeemStep('confirm')} disabled={shopLoading}
-                  className="text-violet-400 font-black text-sm disabled:opacity-40">← Back</motion.button>
-                <h3 className="text-white font-black text-base flex-1">📦 Delivery Address</h3>
-              </div>
-              <div className="flex items-center gap-2 rounded-2xl p-2.5 mb-4"
-                style={{background:'rgba(251,191,36,0.08)',border:'1.5px solid rgba(251,191,36,0.25)'}}>
-                <span className="text-xl">{confirmProduct.emoji}</span>
-                <div>
-                  <p className="text-white font-black text-xs">{confirmProduct.name}</p>
-                  <p className="text-amber-400/60 text-[10px] font-semibold">{confirmProduct.pointCost} pts</p>
-                </div>
-              </div>
-              <div className="space-y-2.5">
-                {([
-                  { key: 'name' as const, label: 'Full Name', placeholder: 'e.g. Priya Sharma', type: 'text' },
-                  { key: 'phone' as const, label: 'Phone', placeholder: 'e.g. 9876543210', type: 'tel' },
-                  { key: 'address' as const, label: 'Address Line 1', placeholder: 'Street, Apartment, Building', type: 'text' },
-                  { key: 'city' as const, label: 'City', placeholder: 'e.g. Mumbai', type: 'text' },
-                  { key: 'state' as const, label: 'State', placeholder: 'e.g. Maharashtra', type: 'text' },
-                  { key: 'pincode' as const, label: 'Pincode', placeholder: 'e.g. 400001', type: 'text' },
-                ] as const).map(field => (
-                  <div key={field.key}>
-                    <label className="text-violet-400/60 text-[10px] font-black uppercase tracking-wide mb-1 block">{field.label}</label>
-                    <input
-                      type={field.type}
-                      placeholder={field.placeholder}
-                      value={addressFields[field.key]}
-                      onChange={e => setAddressFields(prev => ({ ...prev, [field.key]: e.target.value }))}
-                      className="pastel-input"
-                    />
-                  </div>
-                ))}
-              </div>
-              <div className="flex gap-2 mt-4">
-                <motion.button whileTap={{y:3}} onClick={() => setRedeemStep('confirm')} disabled={shopLoading}
-                  className="flex-1 py-3 rounded-2xl border-2 border-violet-300/50 text-violet-100 text-sm font-black bg-white/10 disabled:opacity-50">
-                  Back
-                </motion.button>
-                <motion.button
-                  whileTap={Object.values(addressFields).every(v => v.trim()) && !shopLoading ? {y:5,boxShadow:'0 1px 0 #92400e'} : {}}
-                  onClick={() => {
-                    if (Object.values(addressFields).every(v => v.trim()) && !shopLoading) {
-                      handleRedeem(confirmProduct, addressFields)
-                    }
-                  }}
-                  disabled={!Object.values(addressFields).every(v => v.trim()) || shopLoading}
-                  className="flex-1 btn-candy-gold py-3 text-sm disabled:opacity-50">
-                  {shopLoading ? '✨ Ordering…' : '✨ Confirm Order'}
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ── Download Ready Modal ── */}
-      <AnimatePresence>
-        {downloadReady && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-purple-950/40 backdrop-blur-sm"
-            onClick={() => setDownloadReady(null)}>
-            <motion.div initial={{ scale: 0.8, y: 20 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-              onClick={e => e.stopPropagation()}
-              className="candy-card p-6 max-w-sm w-full text-center">
-              <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 1.5, repeat: Infinity }} className="text-5xl mb-3">{downloadReady.emoji}</motion.div>
-              <h3 className="text-white font-black text-lg mb-1">Your PDF is ready!</h3>
-              <p className="text-violet-300/60 text-xs mb-5 font-semibold">{downloadReady.name} has been unlocked</p>
-              <a href={downloadReady.path} download onClick={() => setTimeout(() => setDownloadReady(null), 800)}
-                className="block w-full btn-candy-gold py-4 text-sm font-black rounded-2xl mb-3 no-underline">
-                ⬇️ Download PDF
-              </a>
-              <motion.button whileTap={{y:2}} onClick={() => setDownloadReady(null)}
-                className="w-full py-2.5 rounded-2xl border-2 border-violet-300/40 text-violet-100 text-sm font-black bg-white/10">
-                Close
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* ── Header ── */}
-      <div className="sticky top-0 z-40 px-4 py-2.5" style={{background:'rgba(253,248,255,0.97)',borderBottom:'2px solid rgba(139,92,246,0.25)',backdropFilter:'blur(12px)'}}>
+      <div className="sticky top-0 z-40 px-4 py-2.5" style={{background:'linear-gradient(180deg,rgba(13,8,36,0.97),rgba(13,8,36,0.92))',borderBottom:'2px solid rgba(139,92,246,0.3)',backdropFilter:'blur(12px)'}}>
         <div className="flex items-center justify-between max-w-lg mx-auto">
           <div className="flex items-center gap-2">
             <motion.span animate={{ rotate: [0, -12, 12, 0] }} transition={{ duration: 3, repeat: Infinity }} className="text-2xl">🧘</motion.span>
@@ -651,7 +476,7 @@ function DashboardContent() {
               {/* CC-style Chapter / Episode card */}
               <motion.div whileTap={{ y: 3 }} onClick={() => setTab('map')}
                 className="rounded-3xl p-4 cursor-pointer relative overflow-hidden"
-                style={{background:'linear-gradient(135deg,#6a48af 0%,#7c5cbf 40%,#8b6bd9 100%)',border:'2px solid rgba(196,181,253,0.55)',boxShadow:'0 5px 0 #4c2d9e, 0 7px 20px rgba(109,71,176,0.25)'}}>
+                style={{background:'linear-gradient(135deg,#1e0a5e 0%,#3b1298 40%,#2d1b69 100%)',border:'2px solid rgba(167,139,250,0.5)',boxShadow:'0 6px 0 #1a0845, 0 8px 24px rgba(109,40,217,0.4)'}}>
                 {/* Background sparkles */}
                 {['12%,20%','80%,15%','70%,75%','20%,70%'].map((pos, i) => (
                   <span key={i} className="absolute text-yellow-200 candy-sparkle pointer-events-none" style={{left:pos.split(',')[0],top:pos.split(',')[1],fontSize:'10px',opacity:0.4,animationDelay:`${i*0.4}s`}}>✦</span>
@@ -745,7 +570,7 @@ function DashboardContent() {
                   <div className="space-y-2">
                     {duplicateCards.slice(0, 3).map(card => (
                       <div key={card.id} className="flex items-center gap-3 rounded-2xl p-3"
-                        style={{background:'rgba(255,255,255,0.14)',border:'1.5px solid rgba(251,191,36,0.35)'}}>
+                        style={{background:'rgba(0,0,0,0.3)',border:'1.5px solid rgba(251,191,36,0.2)'}}>
                         <motion.span animate={{ rotate: [0, 8, -8, 0] }} transition={{ duration: 2, repeat: Infinity }} className="text-2xl">{card.cardTemplate.imageEmoji}</motion.span>
                         <span className="text-white/80 text-sm flex-1 font-semibold">{card.cardTemplate.name}</span>
                         <motion.button whileTap={{y:4,boxShadow:'0 1px 0 #92400e'}} onClick={() => setGiftCard(card)}
@@ -881,27 +706,19 @@ function DashboardContent() {
               )}
             </motion.div>
           )}
-          {/* SHOP */}
-          {tab === 'shop' && (
-            <motion.div key="shop" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}>
-              <ShopTab products={shopProducts} redemptions={shopRedemptions} userPoints={user.points} onRedeem={setConfirmProduct} />
-            </motion.div>
-          )}
-
         </AnimatePresence>
       </div>
 
       {/* ── Bottom Nav ── */}
       <div className="fixed bottom-3 left-0 right-0 z-40 px-4">
         <div className="max-w-sm mx-auto backdrop-blur-xl rounded-[28px] px-1.5 py-1.5 flex gap-0.5"
-          style={{background:'rgba(255,255,255,0.97)',border:'2px solid rgba(139,92,246,0.3)',boxShadow:'0 4px 0 rgba(139,92,246,0.12), 0 8px 24px rgba(109,71,176,0.12), inset 0 1px 0 rgba(255,255,255,0.9)'}}>
+          style={{background:'linear-gradient(135deg,rgba(22,8,60,0.97),rgba(13,8,36,0.99))',border:'2px solid rgba(139,92,246,0.4)',boxShadow:'0 8px 0 rgba(0,0,0,0.5), 0 12px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05)'}}>
           {([
             { key: 'home' as const,         emoji: '🏠', label: 'Home',     badge: 0,                    onClick: () => setTab('home') },
             { key: 'scratch' as const,       emoji: '🃏', label: 'Scratch',  badge: unscratchedCards.length, onClick: () => setTab('scratch') },
             { key: 'collection' as const,    emoji: '📚', label: 'Cards',    badge: 0,                    onClick: () => setTab('collection') },
             { key: 'map' as const,           emoji: '🗺️', label: 'Map',      badge: incoming.length,      onClick: () => setTab('map') },
             { key: 'notifications' as const, emoji: '🔔', label: 'Alerts',   badge: unreadCount,          onClick: openNotifications },
-            { key: 'shop' as const,          emoji: '🛒', label: 'Shop',     badge: 0,                    onClick: () => setTab('shop') },
           ]).map(item => (
             <motion.button key={item.key} onClick={item.onClick}
               whileTap={{ scale: 0.85, y: 2 }}
@@ -916,7 +733,7 @@ function DashboardContent() {
                 transition={{ duration: 1.4, repeat: Infinity }}>
                 {item.emoji}
               </motion.span>
-              <span className={`text-[8px] font-black tracking-wide ${tab === item.key ? 'text-white' : 'text-purple-500'}`}>{item.label}</span>
+              <span className={`text-[8px] font-black tracking-wide ${tab === item.key ? 'text-white' : 'text-violet-400/40'}`}>{item.label}</span>
               {item.badge > 0 && (
                 <motion.span animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 1, repeat: Infinity }}
                   className="absolute -top-1 right-0.5 w-4 h-4 rounded-full text-white text-[9px] flex items-center justify-center font-black border-2 border-[#0d0824]"
@@ -1031,7 +848,7 @@ function ScratchTab({ cards, onDone }: { cards: CardData[], onDone: () => void }
       <AnimatePresence>
         {showReward && scratchResult?.rewards && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-purple-950/40 backdrop-blur-sm">
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/70 backdrop-blur-sm">
             <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', bounce: 0.55, duration: 0.7 }}
               className={`rounded-3xl p-7 max-w-sm w-full text-center ${
@@ -1136,101 +953,6 @@ function CollectionTab({ cards, onGift }: { cards: CardData[], onGift: (card: Ca
 }
 
 // ─────────────────────────────────────────────────────────
-function ShopTab({ products, redemptions, userPoints, onRedeem }: {
-  products: ShopProduct[]
-  redemptions: ShopRedemption[]
-  userPoints: number
-  onRedeem: (p: ShopProduct) => void
-}) {
-  const RARITY_BADGE: Record<string, { label: string; color: string; border: string }> = {
-    EPIC:   { label: 'EPIC',   color: 'text-amber-300', border: 'rgba(251,191,36,0.5)' },
-    RARE:   { label: 'RARE',   color: 'text-violet-300', border: 'rgba(167,139,250,0.5)' },
-    COMMON: { label: '',        color: '',               border: '' },
-  }
-
-  return (
-    <div className="space-y-5 pb-4">
-      {/* Header with balance */}
-      <div className="candy-card p-4 flex items-center justify-between">
-        <div>
-          <p className="text-violet-400 text-xs font-black uppercase tracking-wider mb-0.5">🛒 Wellness Shop</p>
-          <p className="text-white/50 text-xs font-semibold">Redeem points for yoga rewards</p>
-        </div>
-        <div className="text-right">
-          <p className="text-amber-300 font-black text-xl">{userPoints}</p>
-          <p className="text-amber-500/60 text-[10px]">pts available</p>
-        </div>
-      </div>
-
-      {/* Product grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {products.map(product => {
-          const canAfford = userPoints >= product.pointCost
-          const badge = RARITY_BADGE[product.rarity]
-          return (
-            <div key={product.id} className="candy-card p-3 flex flex-col gap-2"
-              style={product.rarity === 'EPIC' ? {borderColor:'rgba(251,191,36,0.5)',background:'linear-gradient(135deg,#7c2d12 0%,#92400e 100%)'} :
-                     product.rarity === 'RARE' ? {borderColor:'rgba(167,139,250,0.4)'} : {}}>
-              <div className="flex items-start justify-between">
-                <span className="text-3xl">{product.emoji}</span>
-                {badge.label && (
-                  <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full border ${badge.color}`}
-                    style={{borderColor:badge.border,background:'rgba(0,0,0,0.3)'}}>
-                    {badge.label}
-                  </span>
-                )}
-              </div>
-              <div className="flex-1">
-                <p className="text-white font-black text-xs leading-tight">{product.name}</p>
-                <p className="text-violet-400/50 text-[10px] mt-0.5 leading-relaxed font-semibold">{product.description}</p>
-              </div>
-              {!product.digital && (
-                <p className="text-indigo-400/60 text-[9px] font-black">📦 Ships to you</p>
-              )}
-              <div className="flex items-center justify-between mt-1">
-                <span className="text-amber-300 font-black text-sm">{product.pointCost} pts</span>
-                <motion.button
-                  whileTap={canAfford ? {y:3,boxShadow:'0 1px 0 #92400e'} : {}}
-                  onClick={() => canAfford && onRedeem(product)}
-                  disabled={!canAfford}
-                  className={`text-[10px] font-black px-2.5 py-1.5 rounded-xl transition-all ${
-                    canAfford ? 'btn-candy-gold' : 'border-2 border-white/10 text-white/25 bg-black/20 cursor-not-allowed'
-                  }`}>
-                  {canAfford ? 'Redeem' : 'Need ' + (product.pointCost - userPoints) + ' more'}
-                </motion.button>
-              </div>
-            </div>
-          )
-        })}
-      </div>
-
-      {/* Redemption history */}
-      {redemptions.length > 0 && (
-        <div className="candy-card p-4">
-          <p className="text-violet-400 text-xs font-black uppercase tracking-wider mb-3">✅ Already Redeemed</p>
-          <div className="space-y-2">
-            {redemptions.map(r => {
-              const p = products.find(x => x.id === r.productId)
-              return (
-                <div key={r.id} className="flex items-center gap-3 rounded-2xl p-2.5"
-                  style={{background:'rgba(255,255,255,0.14)',border:'1.5px solid rgba(196,181,253,0.35)'}}>
-                  <span className="text-xl shrink-0">{p?.emoji ?? '🎁'}</span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-white/80 text-xs font-black truncate">{p?.name ?? r.productId}</p>
-                    <p className="text-violet-400/40 text-[10px] font-semibold">{new Date(r.redeemedAt).toLocaleDateString()}</p>
-                  </div>
-                  <span className="text-amber-500/60 text-[10px] font-black shrink-0">-{r.pointsSpent} pts</span>
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────
 const FAQ_ITEMS = [
   { q: '🃏 How do I earn scratch cards?', a: 'Share your referral link. Every time someone fills in their name and phone on your link, you get a scratch card. You also get a free welcome card when you sign up!' },
   { q: '🎯 How do levels work?', a: 'Each level needs a certain number of unique yoga pose cards. Level 1 needs 2, Level 2 needs 3, and so on. Scratch your cards to collect new poses and advance!' },
@@ -1288,7 +1010,7 @@ function FaqSection({ showFaq, onToggle }: { showFaq: boolean; onToggle: () => v
 export default function DashboardPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#fdf8ff] flex items-center justify-center">
+      <div className="min-h-screen bg-[#0d0824] flex items-center justify-center">
         <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="text-4xl">🧘</motion.div>
       </div>
     }>

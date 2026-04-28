@@ -19,8 +19,8 @@ export function getLevelConfig(level: number): LevelConfig {
     return {
       level: clampedLevel,
       uniqueCardTypes,
-      yogaDays: clampedLevel * 14 + 60,
-      points: 2000,
+      yogaDays: clampedLevel * 7 + 30,
+      points: 1000,
       isBonusLevel: true,
       label: `⭐ BONUS LEVEL ${clampedLevel}`,
       emoji: '🏆',
@@ -30,8 +30,8 @@ export function getLevelConfig(level: number): LevelConfig {
   return {
     level: clampedLevel,
     uniqueCardTypes,
-    yogaDays: clampedLevel * 14,
-    points: clampedLevel * 100,
+    yogaDays: clampedLevel * 7,
+    points: clampedLevel * 50,
     isBonusLevel: false,
     label: `Level ${clampedLevel}`,
     emoji: clampedLevel <= 3 ? '🌱' : clampedLevel <= 6 ? '🌿' : '🌳',
