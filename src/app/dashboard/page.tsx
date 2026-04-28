@@ -496,16 +496,38 @@ function DashboardContent() {
                     </p>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    <div className="flex gap-1">
-                      {[1,2,3].map(s => {
-                        const thresh = s === 1 ? 1 : s === 2 ? 3 : 5
-                        const lit = levelData.completedLevels.filter(l => l <= (levelData.currentLevel <= 5 ? 5 : 10) && l >= (levelData.currentLevel <= 5 ? 1 : 6)).length >= thresh
-                        return (
-                          <motion.span key={s} animate={lit ? { scale:[1,1.2,1] } : {}} transition={{duration:1.5,repeat:Infinity,delay:s*0.2}}
-                            className="text-xl" style={{filter:lit?'drop-shadow(0 0 6px #fbbf24)':'none',opacity:lit?1:0.2}}>⭐</motion.span>
-                        )
-                      })}
-                    </div>
+                    {(() => {
+                      const chapterMin = levelData.currentLevel <= 5 ? 1 : 6
+                      const chapterMax = levelData.currentLevel <= 5 ? 5 : 10
+                      const chapterCompleted = levelData.completedLevels.filter(
+                        (l) => l >= chapterMin && l <= chapterMax
+                      ).length
+
+                      const earnedStars =
+                        chapterCompleted >= 5 ? 3 :
+                        chapterCompleted >= 3 ? 2 :
+                        chapterCompleted >= 1 ? 1 : 0
+
+                      return (
+                        <div className="flex gap-1">
+                          {earnedStars > 0 ? (
+                            Array.from({ length: earnedStars }).map((_, idx) => (
+                              <motion.span
+                                key={idx}
+                                animate={{ scale:[1,1.2,1] }}
+                                transition={{duration:1.5,repeat:Infinity,delay:(idx + 1) * 0.2}}
+                                className="text-xl"
+                                style={{filter:'drop-shadow(0 0 6px #fbbf24)',opacity:1}}
+                              >
+                                ⭐
+                              </motion.span>
+                            ))
+                          ) : (
+                            <span className="text-violet-300/40 text-[10px] font-black">No stars yet</span>
+                          )}
+                        </div>
+                      )
+                    })()}
                     <motion.span animate={{ x: [0, 4, 0] }} transition={{ duration: 1.2, repeat: Infinity }} className="text-violet-300/60 text-sm">🗺️→</motion.span>
                   </div>
                 </div>
