@@ -761,6 +761,8 @@ function ScratchTab({ cards, onDone }: { cards: CardData[], onDone: () => void }
   const [showReward, setShowReward] = useState(false)
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const ScratchCard = require('@/components/ScratchCard').default
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const FlipCard = require('@/components/FlipCard').default
 
   if (cards.length === 0) {
     return (
@@ -809,7 +811,7 @@ function ScratchTab({ cards, onDone }: { cards: CardData[], onDone: () => void }
       </div>
       <p className="text-violet-400/60 text-sm font-black">Card {currentIndex + 1} of {cards.length}</p>
 
-      {current && (
+      {current && !scratchResult && (
         <ScratchCard key={current.id} cardId={current.id} emoji={current.cardTemplate.imageEmoji}
           name={current.cardTemplate.name} rarity={current.cardTemplate.rarity}
           isDuplicate={current.isDuplicate} onScratched={handleScratched} />
@@ -817,14 +819,23 @@ function ScratchTab({ cards, onDone }: { cards: CardData[], onDone: () => void }
 
       <AnimatePresence>
         {scratchResult && !showReward && (
-          <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-            className="text-center space-y-3 w-full max-w-xs">
-            <div className="candy-card p-5">
-              <motion.p animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: 2 }}
-                className="text-3xl mb-2">{scratchResult.card.cardTemplate.imageEmoji}</motion.p>
-              <p className="text-white font-black text-base">{scratchResult.card.cardTemplate.name}</p>
-              <p className="text-violet-400/60 text-xs mt-1 font-semibold">{scratchResult.uniqueCollected}/{scratchResult.uniqueNeeded} unique cards</p>
+          <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', bounce: 0.45, duration: 0.6 }}
+            className="text-center space-y-4 w-full max-w-[260px]">
+            {/* Cinematic FlipCard revealed */}
+            <div className="w-full">
+              <FlipCard
+                name={scratchResult.card.cardTemplate.name}
+                emoji={scratchResult.card.cardTemplate.imageEmoji}
+                rarity={scratchResult.card.cardTemplate.rarity as 'COMMON'|'RARE'|'EPIC'}
+                collected={true}
+                source="REFERRAL"
+              />
             </div>
+            {/* Progress */}
+            <p className="text-violet-400/60 text-xs font-semibold">
+              {scratchResult.uniqueCollected}/{scratchResult.uniqueNeeded} unique cards this level
+            </p>
             <motion.button whileTap={{y:5,boxShadow:'0 1px 0 #3b0764'}} onClick={nextCard}
               className="btn-candy-violet w-full py-4 text-sm">
               {currentIndex < cards.length - 1 ? 'Next Card →' : '✅ Done!'}
