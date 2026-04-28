@@ -12,7 +12,7 @@ const RARITY_INFO: Record<string,{label:string;glow:string;border:string;bg:stri
   RARE:   { label:'Rare',   glow:'shadow-indigo-500/50',  border:'border-indigo-400/70', bg:'from-indigo-900 to-purple-950' },
   EPIC:   { label:'Epic',   glow:'shadow-amber-400/60',   border:'border-amber-400/80',  bg:'from-amber-900 to-orange-950' },
 }
-const SCRATCH_REVEAL_THRESHOLD = 0.05
+const SCRATCH_REVEAL_THRESHOLD = 0.15
 
 export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, onScratched }: ScratchCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -40,7 +40,7 @@ export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, 
     ctx.fillStyle='rgba(60,40,100,0.75)'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center'
     ctx.fillText('✨ Scratch to reveal! ✨',canvas.width/2,canvas.height/2-8)
     ctx.font='11px sans-serif'; ctx.fillStyle='rgba(60,40,100,0.5)'
-    ctx.fillText('Reveal unlocks after ~5% scratch',canvas.width/2,canvas.height/2+14)
+    ctx.fillText('Reveal unlocks after ~15% scratch',canvas.width/2,canvas.height/2+14)
   }, [])
 
   function getPos(e:React.MouseEvent|React.TouchEvent,canvas:HTMLCanvasElement) {
