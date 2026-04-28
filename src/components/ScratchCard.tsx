@@ -15,10 +15,9 @@ const RARITY_INFO: Record<string,{label:string;glow:string;border:string;bg:stri
 
 export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, onScratched }: ScratchCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
-  const [isScratching, setIsScratching] = useState(false)
-  const [scratchPercent, setScratchPercent] = useState(0)
   const [revealed, setRevealed] = useState(false)
   const [loading, setLoading] = useState(false)
+  const hasRevealedRef = useRef(false)   // ref guard — prevents double API calls
   const lastPos = useRef<{x:number;y:number}|null>(null)
   const ri = RARITY_INFO[rarity] ?? RARITY_INFO.COMMON
 
@@ -36,9 +35,9 @@ export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, 
     }
     // Text
     ctx.fillStyle='rgba(60,40,100,0.75)'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center'
-    ctx.fillText('✨ Scratch here! ✨',canvas.width/2,canvas.height/2-8)
+    ctx.fillText('✨ Scratch to reveal! ✨',canvas.width/2,canvas.height/2-8)
     ctx.font='11px sans-serif'; ctx.fillStyle='rgba(60,40,100,0.5)'
-    ctx.fillText('Swipe your finger',canvas.width/2,canvas.height/2+14)
+    ctx.fillText('Any swipe works!',canvas.width/2,canvas.height/2+14)
   }, [])
 
   function getPos(e:React.MouseEvent|React.TouchEvent,canvas:HTMLCanvasElement) {
@@ -47,25 +46,40 @@ export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, 
     return {x:(e.clientX-rect.left)*scaleX,y:(e.clientY-rect.top)*scaleY}
   }
 
-  function scratch(x:number,y:number) {
+  // Just draws the visual scratch mark — does NOT control reveal logic
+  function drawScratch(x:number,y:number) {
     const canvas=canvasRef.current; if(!canvas) return
     const ctx=canvas.getContext('2d'); if(!ctx) return
     ctx.globalCompositeOperation='destination-out'; ctx.beginPath()
-    if (lastPos.current) { ctx.moveTo(lastPos.current.x,lastPos.current.y); ctx.lineTo(x,y); ctx.lineWidth=48; ctx.lineCap='round'; ctx.lineJoin='round'; ctx.strokeStyle='rgba(0,0,0,1)'; ctx.stroke() }
-    ctx.arc(x,y,26,0,Math.PI*2); ctx.fill(); lastPos.current={x,y}
-    const imageData=ctx.getImageData(0,0,canvas.width,canvas.height); const pixels=imageData.data; let transparent=0
-    for (let i=3;i<pixels.length;i+=4) { if(pixels[i]<128) transparent++ }
-    const percent=(transparent/(pixels.length/4))*100; setScratchPercent(percent)
-    if (percent>2&&!revealed) handleFullReveal()
+    if (lastPos.current) {
+      ctx.moveTo(lastPos.current.x,lastPos.current.y); ctx.lineTo(x,y)
+      ctx.lineWidth=60; ctx.lineCap='round'; ctx.lineJoin='round'
+      ctx.strokeStyle='rgba(0,0,0,1)'; ctx.stroke()
+    }
+    ctx.arc(x,y,30,0,Math.PI*2); ctx.fill()
+    lastPos.current={x,y}
   }
 
+  // Triggered immediately on first touch — clears canvas and calls API
   async function handleFullReveal() {
-    if (revealed||loading) return; setRevealed(true); setLoading(true)
-    const canvas=canvasRef.current; if(canvas){const ctx=canvas.getContext('2d');if(ctx)ctx.clearRect(0,0,canvas.width,canvas.height)}
+    if (hasRevealedRef.current) return
+    hasRevealedRef.current = true
+    setRevealed(true); setLoading(true)
+    // Clear the overlay immediately for instant visual feedback
+    const canvas=canvasRef.current
+    if (canvas) { const ctx=canvas.getContext('2d'); if(ctx) ctx.clearRect(0,0,canvas.width,canvas.height) }
     try {
       const res=await fetch('/api/cards/scratch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cardId})})
       const data=await res.json(); if(data.success) onScratched(data)
     } catch(e){console.error(e)} finally {setLoading(false)}
+  }
+
+  function onStart(e:React.MouseEvent|React.TouchEvent) {
+    if ('touches' in e) e.preventDefault()
+    lastPos.current = null
+    const pos = getPos(e, canvasRef.current!)
+    drawScratch(pos.x, pos.y)
+    handleFullReveal()   // ← reveal on FIRST touch, always
   }
 
   return (
@@ -83,20 +97,22 @@ export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, 
           {isDuplicate && <p className="text-amber-300 text-xs font-bold bg-amber-500/20 border border-amber-400/30 rounded-lg py-1">⚡ Duplicate — can be gifted</p>}
         </div>
       </div>
-      {/* Scratch overlay */}
+
+      {/* Scratch overlay — hidden once revealed */}
       {!revealed && (
-        <canvas ref={canvasRef} width={256} height={320} className="absolute inset-0 w-full h-full rounded-3xl cursor-pointer touch-none"
-          onMouseDown={e=>{setIsScratching(true);lastPos.current=null;scratch(...Object.values(getPos(e,canvasRef.current!)) as [number,number])}}
-          onMouseMove={e=>{if(isScratching)scratch(...Object.values(getPos(e,canvasRef.current!)) as [number,number])}}
-          onMouseUp={()=>{setIsScratching(false);lastPos.current=null}} onMouseLeave={()=>{setIsScratching(false);lastPos.current=null}}
-          onTouchStart={e=>{e.preventDefault();setIsScratching(true);lastPos.current=null;scratch(...Object.values(getPos(e,canvasRef.current!)) as [number,number])}}
-          onTouchMove={e=>{e.preventDefault();if(isScratching)scratch(...Object.values(getPos(e,canvasRef.current!)) as [number,number])}}
-          onTouchEnd={()=>{setIsScratching(false);lastPos.current=null}} />
+        <canvas
+          ref={canvasRef}
+          width={256} height={320}
+          className="absolute inset-0 w-full h-full rounded-3xl cursor-pointer touch-none"
+          onMouseDown={onStart}
+          onTouchStart={onStart}
+        />
       )}
-      {/* Scratch hint */}
-      {!revealed&&scratchPercent===0&&(
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap">
-          <p className="text-white/50 text-[10px] text-center font-bold">👆 Scratch to reveal!</p>
+
+      {/* Loading indicator */}
+      {loading && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-3xl bg-black/20">
+          <motion.div animate={{rotate:360}} transition={{duration:0.8,repeat:Infinity,ease:'linear'}} className="text-3xl">✨</motion.div>
         </div>
       )}
     </div>
