@@ -9,9 +9,9 @@ import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    const { name, phone, username, password, referralToken: incomingReferralToken } = await request.json()
+    const { name, phone, username, referralToken: incomingReferralToken } = await request.json()
 
-    if (!name || !phone || !username || !password) {
+    if (!name || !phone || !username) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
     }
 
@@ -22,7 +22,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Phone or username already taken' }, { status: 409 })
     }
 
-    const passwordHash = await bcrypt.hash(password, 10)
+    // No password auth — store a random hash as placeholder
+    const passwordHash = await bcrypt.hash(uuidv4(), 10)
     const myReferralToken = uuidv4().replace(/-/g, '').slice(0, 12)
 
     const user = await prisma.user.create({
