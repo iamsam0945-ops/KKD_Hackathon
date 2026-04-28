@@ -12,108 +12,60 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
+    e.preventDefault(); setLoading(true); setError('')
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
+      const res = await fetch('/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(form) })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
       router.push('/dashboard')
-    } catch {
-      setError('Something went wrong')
-    } finally {
-      setLoading(false)
-    }
+    } catch { setError('Something went wrong') } finally { setLoading(false) }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center px-4 relative overflow-hidden">
-      {/* Animated blobs */}
-      <div className="animate-blob absolute top-[-10%] left-[-10%] w-72 h-72 rounded-full bg-violet-600/20 blur-3xl" />
-      <div className="animate-blob absolute bottom-[-10%] right-[-10%] w-72 h-72 rounded-full bg-pink-600/20 blur-3xl" style={{ animationDelay: '3s' }} />
+    <div className="min-h-screen bg-[#0d0824] flex flex-col items-center justify-center px-5">
+      {/* Blobs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="candy-blob absolute w-64 h-64" style={{background:'rgba(139,92,246,0.15)',top:'-50px',right:'-40px',borderRadius:'40% 60% 70% 30% / 40% 50% 60% 50%'}}/>
+        <div className="candy-blob absolute w-48 h-48" style={{background:'rgba(244,114,182,0.1)',bottom:'5%',left:'-30px',borderRadius:'60% 40% 30% 70% / 60% 30% 70% 40%',animationDelay:'2s'}}/>
+        {['15%,8%','82%,22%','6%,52%','88%,58%','50%,90%'].map((pos, i) => (
+          <div key={i} className="absolute candy-sparkle font-black" style={{left:pos.split(',')[0],top:pos.split(',')[1],animationDelay:`${i*0.45}s`,fontSize:'12px',color:['#a78bfa','#fbbf24','#34d399','#f472b6','#60a5fa'][i]}}>✦</div>
+        ))}
+      </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 24, scale: 0.96 }}
-        animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-sm"
-      >
-        {/* Header */}
+      <motion.div initial={{opacity:0,y:24}} animate={{opacity:1,y:0}} transition={{duration:0.4}} className="w-full max-w-sm relative z-10">
         <div className="text-center mb-8">
-          <motion.div
-            animate={{ rotate: [0, -10, 10, 0], scale: [1, 1.1, 1] }}
-            transition={{ duration: 3, repeat: Infinity }}
-            className="text-6xl mb-3 inline-block"
-          >
-            🧘
-          </motion.div>
-          <h1 className="text-3xl font-black shimmer-text">YogaQuest</h1>
-          <p className="text-white/50 text-sm mt-1 font-semibold">Welcome back! Continue your journey</p>
+          <motion.div className="text-6xl mb-3 candy-float inline-block" style={{filter:'drop-shadow(0 0 16px rgba(167,139,250,0.5))'}}>🧘</motion.div>
+          <h1 className="text-3xl font-black" style={{
+            background:'linear-gradient(135deg,#c4b5fd,#f472b6,#fbbf24)',
+            WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text'
+          }}>Welcome Back!</h1>
+          <p className="text-violet-300/70 text-sm mt-1 font-semibold">Continue your yoga journey</p>
         </div>
 
-        {/* Form card */}
-        <div className="relative rounded-3xl p-6 border-[3px] border-violet-400 bg-gradient-to-br from-violet-950 via-[#130d2e] to-indigo-950 card-shadow-violet overflow-hidden space-y-4">
-          <div className="absolute inset-0 bg-gradient-to-br from-white/6 via-transparent to-transparent pointer-events-none" />
-
-          <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+        <div className="candy-card p-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="text-white/60 text-xs font-black mb-1.5 block uppercase tracking-wider">📱 Phone Number</label>
-              <input
-                type="tel"
-                placeholder="9876543210"
-                value={form.phone}
-                onChange={e => setForm(f => ({ ...f, phone: e.target.value }))}
-                required
-                className="w-full bg-white/8 border-2 border-white/15 rounded-2xl px-4 py-3 text-white placeholder-white/20 focus:outline-none focus:border-violet-400/70 focus:bg-white/12 transition-all text-sm font-semibold"
-              />
+              <label className="text-violet-300 text-xs font-black uppercase tracking-wider mb-2 block">📱 Phone Number</label>
+              <input type="tel" placeholder="9876543210" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} required
+                className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold" />
             </div>
             <div>
-              <label className="text-white/60 text-xs font-black mb-1.5 block uppercase tracking-wider">🔒 Password</label>
+              <label className="text-violet-300 text-xs font-black uppercase tracking-wider mb-2 block">🔐 Password</label>
               <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="••••••••"
-                  value={form.password}
-                  onChange={e => setForm(f => ({ ...f, password: e.target.value }))}
-                  required
-                  className="w-full bg-white/8 border-2 border-white/15 rounded-2xl px-4 py-3 pr-12 text-white placeholder-white/20 focus:outline-none focus:border-violet-400/70 focus:bg-white/12 transition-all text-sm font-semibold"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(v => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors p-1"
-                >
-                  {showPassword ? '🙈' : '👁️'}
-                </button>
+                <input type={showPassword?'text':'password'} placeholder="••••••••" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} required
+                  className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-4 py-3 pr-11 text-white placeholder-white/25 focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold" />
+                <button type="button" onClick={()=>setShowPassword(v=>!v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-violet-300 hover:text-white transition-colors text-sm">{showPassword?'🙈':'👁️'}</button>
               </div>
             </div>
-
-            {error && (
-              <motion.p initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                className="text-red-300 text-sm text-center bg-red-500/15 border-2 border-red-400/30 rounded-2xl py-2.5 px-3 font-semibold">
-                ⚠️ {error}
-              </motion.p>
-            )}
-
-            <motion.button
-              whileTap={{ scale: 0.96 }}
-              type="submit"
-              disabled={loading}
-              className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-violet-500 to-indigo-500 text-white font-black text-sm border-[3px] border-pink-400/60 card-shadow-violet disabled:opacity-60 mt-2"
-            >
-              {loading ? '⏳ Signing in...' : '✨ Sign In'}
+            {error && <motion.p initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/30 rounded-xl py-2 px-3 font-semibold">{error}</motion.p>}
+            <motion.button whileTap={{y:5,boxShadow:'0 1px 0 #3b0764'}} type="submit" disabled={loading} className="btn-candy-violet w-full py-4 text-base mt-2 disabled:opacity-50">
+              {loading ? 'Signing in…' : '🎮 Play Now!'}
             </motion.button>
           </form>
         </div>
 
-        <p className="text-center text-white/30 text-xs mt-5 font-semibold">
-          New here?{' '}
-          <Link href="/register" className="text-violet-300 font-black">Create account & get free card 🎁</Link>
+        <p className="text-center text-violet-400/60 text-xs mt-6 font-semibold">
+          New here?{' '}<Link href="/register" className="text-amber-400 hover:text-amber-300 transition-colors font-black">Join the Quest →</Link>
         </p>
       </motion.div>
     </div>

@@ -1,222 +1,74 @@
 'use client'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import yogaPoses from '@/lib/yogaPoses'
 
 interface FlipCardProps {
-  name: string
-  emoji: string
-  rarity: 'COMMON' | 'RARE' | 'EPIC'
-  collected: boolean
-  source?: string
+  name: string; emoji: string; rarity: 'COMMON'|'RARE'|'EPIC'; collected: boolean; source?: string
 }
 
-const RARITY_STYLES: Record<string, {
-  border: string; bg: string; shadowClass: string;
-  badge: string; badgeText: string;
-  lockedBorder: string; lockedBg: string;
-  glowColor: string; backBg: string;
-}> = {
-  COMMON: {
-    border: 'border-violet-400',
-    bg: 'from-violet-950 via-[#1a0d40] to-indigo-950',
-    shadowClass: 'card-shadow-violet',
-    badge: 'bg-violet-500/40 border-violet-300/60 text-violet-100',
-    badgeText: 'COMMON',
-    lockedBorder: 'border-violet-900/50',
-    lockedBg: 'from-[#0e0920] to-[#08060f]',
-    glowColor: 'rgba(139,92,246,0.6)',
-    backBg: 'from-violet-950 via-[#180d38] to-indigo-950',
-  },
-  RARE: {
-    border: 'border-sky-400',
-    bg: 'from-sky-950 via-[#0a1a3a] to-blue-950',
-    shadowClass: 'card-shadow-blue',
-    badge: 'bg-sky-500/40 border-sky-300/60 text-sky-100',
-    badgeText: 'RARE',
-    lockedBorder: 'border-sky-900/50',
-    lockedBg: 'from-[#07101e] to-[#040810]',
-    glowColor: 'rgba(56,189,248,0.6)',
-    backBg: 'from-sky-950 via-[#081830] to-blue-950',
-  },
-  EPIC: {
-    border: 'border-amber-400',
-    bg: 'from-amber-950 via-[#2a1500] to-orange-950',
-    shadowClass: 'card-shadow-gold',
-    badge: 'bg-amber-500/40 border-amber-300/60 text-amber-100',
-    badgeText: 'EPIC ✦',
-    lockedBorder: 'border-amber-900/40',
-    lockedBg: 'from-[#150b00] to-[#0a0600]',
-    glowColor: 'rgba(251,191,36,0.7)',
-    backBg: 'from-amber-950 via-[#201000] to-orange-950',
-  },
+const RARITY: Record<string, {label:string;border:string;glow:string;badge:string;text:string}> = {
+  COMMON: { label:'Common', border:'border-slate-500/50', glow:'',                       badge:'bg-slate-600 text-slate-200',    text:'text-slate-400' },
+  RARE:   { label:'Rare',   border:'border-indigo-400/70', glow:'shadow-indigo-500/40',   badge:'bg-indigo-600 text-indigo-100',  text:'text-indigo-400' },
+  EPIC:   { label:'Epic',   border:'border-amber-400/80',  glow:'shadow-amber-400/50',    badge:'bg-amber-500 text-amber-100',   text:'text-amber-400' },
 }
-
-const SOURCE_LABEL: Record<string, string> = {
-  WELCOME:  '🎁 Welcome',
-  REFERRAL: '🔗 Referral',
-  BONUS:    '⚡ Bonus',
-  GIFTED:   '🤝 Gifted',
-}
+const SOURCE_LABEL: Record<string,string> = { WELCOME:'Welcome', REFERRAL:'Referral', BONUS:'Bonus', GIFTED:'Gifted' }
 
 export default function FlipCard({ name, emoji, rarity, collected, source }: FlipCardProps) {
   const [flipped, setFlipped] = useState(false)
-  const styles = RARITY_STYLES[rarity] ?? RARITY_STYLES.COMMON
-
-  const pose = yogaPoses.find(p => p.name === name) ?? yogaPoses.find(p => p.english === name)
+  const r = RARITY[rarity] ?? RARITY.COMMON
+  const pose = yogaPoses.find(p=>p.name===name) ?? yogaPoses.find(p=>p.english===name)
   const englishName = pose?.english ?? name
-  const benefits    = pose?.benefits ?? 'Practice this pose mindfully and breathe deeply.'
-  const steps       = pose?.steps   ?? ['Find a comfortable stance', 'Breathe deeply and hold', 'Release gently on exhale']
-
-  function handleClick() {
-    if (!collected) return
-    setFlipped(f => !f)
-  }
+  const benefits = pose?.benefits ?? 'Practice this pose mindfully and breathe deeply.'
+  const steps = pose?.steps ?? ['Find a comfortable stance','Breathe deeply and hold','Release gently on exhale']
 
   return (
-    <div
-      className="relative w-full aspect-[3/4] cursor-pointer select-none"
-      style={{ perspective: '1000px' }}
-      onClick={handleClick}
-    >
-      <motion.div
-        className="relative w-full h-full"
-        style={{ transformStyle: 'preserve-3d' }}
-        animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
-      >
-        {/* ── FRONT ── */}
-        <div
-          className={`absolute inset-0 rounded-2xl border-[3px] flex flex-col items-center justify-between p-3 overflow-hidden
-            ${collected
-              ? `${styles.border} ${styles.shadowClass} bg-gradient-to-br ${styles.bg}`
-              : `${styles.lockedBorder} bg-gradient-to-br ${styles.lockedBg}`
-            }`}
-          style={{ backfaceVisibility: 'hidden' }}
-        >
-          {/* Inner shine overlay for collected cards */}
-          {collected && (
-            <div className="absolute inset-0 bg-gradient-to-br from-white/8 via-transparent to-transparent rounded-2xl pointer-events-none" />
-          )}
-
-          {/* Top row */}
-          <div className="w-full flex items-center justify-between relative z-10">
-            {collected && source ? (
-              <span className="text-[9px] text-white/40 font-bold">{SOURCE_LABEL[source] ?? source}</span>
-            ) : <span />}
-            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border ${
-              collected ? styles.badge : 'bg-white/5 border-white/10 text-white/20'
-            }`}>
-              {styles.badgeText}
-            </span>
+    <div className="relative w-full aspect-[3/4] cursor-pointer select-none" style={{perspective:'1000px'}} onClick={()=>{ if(collected) setFlipped(f=>!f) }}>
+      <motion.div className="relative w-full h-full" style={{transformStyle:'preserve-3d'}} animate={{rotateY:flipped?180:0}} transition={{duration:0.5,ease:[0.4,0,0.2,1]}}>
+        {/* FRONT */}
+        <div className={`absolute inset-0 rounded-3xl border-2 flex flex-col items-center justify-between p-3 overflow-hidden ${r.border} ${collected?`shadow-lg ${r.glow}`:''} ${collected&&rarity==='EPIC'?'epic-shimmer':''}`}
+          style={{backfaceVisibility:'hidden', background:collected?'linear-gradient(160deg,#2d1b69 0%,#1e0f4a 60%,#130930 100%)':'linear-gradient(160deg,#1a1a2e 0%,#111124 100%)',opacity:collected?1:0.5}}>
+          <div className="w-full flex items-center justify-between">
+            {collected&&source?<span className="text-[9px] text-violet-400/70 font-semibold">{SOURCE_LABEL[source]??source}</span>:<span/>}
+            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full ${collected?r.badge:'bg-gray-700 text-gray-500'}`}>{r.label}</span>
           </div>
-
-          {/* Emoji */}
-          <div className="relative flex flex-col items-center gap-2 z-10">
-            <motion.div
-              className={`text-6xl drop-shadow-lg ${!collected ? 'grayscale opacity-30' : ''}`}
-              animate={collected ? { y: [0, -4, 0] } : {}}
-              transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}
-            >
-              {emoji}
-            </motion.div>
-            {!collected && (
-              <div className="absolute -bottom-1 -right-2 w-6 h-6 rounded-full bg-white/15 border-2 border-white/25 flex items-center justify-center">
-                <span className="text-xs">🔒</span>
-              </div>
-            )}
+          <div className="relative flex flex-col items-center gap-2">
+            <span className={`text-5xl ${!collected?'grayscale opacity-30':''}`}>{emoji}</span>
+            {!collected && <div className="absolute -bottom-1 -right-2 w-5 h-5 rounded-full bg-gray-700 border-2 border-gray-600 flex items-center justify-center"><span className="text-[10px]">🔒</span></div>}
           </div>
-
-          {/* Names */}
-          <div className="w-full text-center space-y-0.5 z-10">
-            <p className={`text-xs font-black leading-tight tracking-wide ${collected ? 'text-white' : 'text-white/30'}`}>
-              {name}
-            </p>
-            {englishName !== name && (
-              <p className={`text-[10px] font-semibold ${collected ? 'text-white/55' : 'text-white/18'}`}>
-                {englishName}
-              </p>
-            )}
-            {collected
-              ? <p className="text-[9px] text-white/40 mt-1 font-semibold">Tap to flip ↩</p>
-              : <p className="text-[9px] text-white/20 mt-1 font-semibold">Not collected</p>
-            }
+          <div className="w-full text-center space-y-0.5">
+            <p className={`text-xs font-black leading-tight ${collected?'text-white':'text-white/20'}`}>{name}</p>
+            {englishName!==name && <p className={`text-[10px] ${collected?'text-violet-300/60':'text-white/15'}`}>{englishName}</p>}
+            <p className={`text-[9px] mt-1 ${collected?r.text:'text-white/10'}`}>{collected?'Tap to flip ↩':'Not collected'}</p>
           </div>
         </div>
-
-        {/* ── BACK ── */}
-        <div
-          className={`absolute inset-0 rounded-2xl border-[3px] ${styles.border} ${styles.shadowClass} flex flex-col p-3 gap-2
-            bg-gradient-to-br ${styles.backBg}`}
-          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
-        >
-          <div className="absolute inset-0 bg-gradient-to-br from-white/6 via-transparent to-transparent rounded-2xl pointer-events-none" />
-
-          <div className="flex items-center gap-2 relative z-10">
-            <span className="text-2xl">{emoji}</span>
-            <div>
-              <p className="text-white text-xs font-black leading-tight">{name}</p>
-              <p className="text-white/40 text-[10px] font-semibold">{englishName}</p>
-            </div>
+        {/* BACK */}
+        <div className="absolute inset-0 rounded-3xl border-2 border-violet-500/50 flex flex-col p-3 gap-2 shadow-lg shadow-violet-500/30"
+          style={{backfaceVisibility:'hidden',transform:'rotateY(180deg)',background:'linear-gradient(160deg,#1e0a5e 0%,#150838 60%,#0d0824 100%)'}}>
+          <div className="flex items-center gap-2">
+            <span className="text-xl">{emoji}</span>
+            <div><p className="text-white text-xs font-black">{name}</p><p className="text-violet-300/60 text-[10px]">{englishName}</p></div>
           </div>
-
-          <div className="bg-white/8 rounded-xl p-2 flex-1 overflow-hidden relative z-10">
-            <p className="text-pink-300 text-[9px] font-black uppercase tracking-widest mb-1">✨ Benefits</p>
-            <p className="text-white/75 text-[10px] leading-relaxed line-clamp-4">{benefits}</p>
+          <div className="bg-black/30 border border-violet-500/20 rounded-xl p-2 flex-1 overflow-hidden">
+            <p className="text-violet-400 text-[9px] font-black uppercase tracking-wider mb-1">Benefits</p>
+            <p className="text-violet-100/70 text-[10px] leading-relaxed line-clamp-4">{benefits}</p>
           </div>
-
-          {steps.length > 0 && (
-            <div className="bg-white/8 rounded-xl p-2 flex-1 overflow-hidden relative z-10">
-              <p className="text-emerald-300 text-[9px] font-black uppercase tracking-widest mb-1">🧘 How to</p>
+          {steps.length>0 && (
+            <div className="bg-black/30 border border-violet-500/20 rounded-xl p-2 flex-1 overflow-hidden">
+              <p className="text-violet-400 text-[9px] font-black uppercase tracking-wider mb-1">How to</p>
               <ol className="space-y-0.5">
-                {steps.slice(0, 4).map((step, i) => (
-                  <li key={i} className="text-white/65 text-[9px] leading-relaxed flex gap-1">
-                    <span className="text-emerald-400 font-black shrink-0">{i + 1}.</span>
+                {steps.slice(0,4).map((step,i)=>(
+                  <li key={i} className="text-violet-100/60 text-[9px] leading-relaxed flex gap-1">
+                    <span className="text-amber-400 font-black shrink-0">{i+1}.</span>
                     <span className="line-clamp-2">{step}</span>
                   </li>
                 ))}
               </ol>
             </div>
           )}
-
-          <p className="text-[9px] text-white/25 text-center font-semibold relative z-10">Tap to flip back ↩</p>
+          <p className="text-[9px] text-violet-400/50 text-center">Tap to flip back ↩</p>
         </div>
       </motion.div>
-
-      {/* EPIC shimmer sweep */}
-      {collected && rarity === 'EPIC' && !flipped && (
-        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-amber-300/20 to-transparent skew-x-12"
-            animate={{ x: ['-150%', '250%'] }}
-            transition={{ duration: 2.2, repeat: Infinity, repeatDelay: 1.2, ease: 'easeInOut' }}
-          />
-        </div>
-      )}
-
-      {/* RARE shimmer sweep */}
-      {collected && rarity === 'RARE' && !flipped && (
-        <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-sky-300/12 to-transparent skew-x-12"
-            animate={{ x: ['-150%', '250%'] }}
-            transition={{ duration: 3, repeat: Infinity, repeatDelay: 2, ease: 'easeInOut' }}
-          />
-        </div>
-      )}
-
-      {/* Pulse glow on uncollected RARE/EPIC */}
-      {!collected && (rarity === 'EPIC' || rarity === 'RARE') && (
-        <motion.div
-          className={`absolute inset-0 rounded-2xl pointer-events-none ${
-            rarity === 'EPIC'
-              ? 'shadow-[0_0_20px_rgba(251,191,36,0.2)]'
-              : 'shadow-[0_0_16px_rgba(56,189,248,0.15)]'
-          }`}
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-        />
-      )}
     </div>
   )
 }

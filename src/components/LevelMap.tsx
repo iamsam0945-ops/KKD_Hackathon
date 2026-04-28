@@ -2,343 +2,185 @@
 import { useRef, useEffect, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
-interface Friend { id: string; name: string; username: string; currentLevel: number; points: number }
+interface Friend { id:string;name:string;username:string;currentLevel:number;points:number }
+interface LevelMapProps { currentLevel:number;completedLevels:number[];friends:Friend[];userName:string;onAddFriend:()=>void }
 
-interface LevelMapProps {
-  currentLevel: number
-  completedLevels: number[]
-  friends: Friend[]
-  userName: string
-  onAddFriend: () => void
-}
-
-const LEVEL_NODES: { level: number; x: number; y: number }[] = [
-  { level: 1,  x: 50,  y: 1160 },
-  { level: 2,  x: 22,  y: 1030 },
-  { level: 3,  x: 68,  y: 910  },
-  { level: 4,  x: 82,  y: 775  },
-  { level: 5,  x: 50,  y: 640  },
-  { level: 6,  x: 18,  y: 510  },
-  { level: 7,  x: 40,  y: 385  },
-  { level: 8,  x: 75,  y: 265  },
-  { level: 9,  x: 58,  y: 145  },
-  { level: 10, x: 50,  y: 30   },
+const LEVEL_NODES: {level:number;x:number;y:number}[] = [
+  {level:1,x:50,y:1160},{level:2,x:22,y:1030},{level:3,x:68,y:910},{level:4,x:82,y:775},
+  {level:5,x:50,y:640},{level:6,x:18,y:510},{level:7,x:40,y:385},{level:8,x:75,y:265},
+  {level:9,x:58,y:145},{level:10,x:50,y:30},
 ]
-
 const MAP_HEIGHT = 1220
-const FRIEND_COLORS = ['#a855f7', '#ec4899', '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4']
+const FRIEND_COLORS = ['#a78bfa','#f472b6','#34d399','#fbbf24','#60a5fa','#c084fc','#22d3ee','#fb923c']
+function fc(n:string){return FRIEND_COLORS[(n.charCodeAt(0)+n.charCodeAt(n.length-1))%FRIEND_COLORS.length]}
 
-function getFriendColor(name: string) {
-  return FRIEND_COLORS[(name.charCodeAt(0) + name.charCodeAt(name.length - 1)) % FRIEND_COLORS.length]
-}
-
-function nodeStyle(completed: boolean, isCurrent: boolean, isBonus: boolean) {
-  if (isBonus && (completed || isCurrent)) return {
-    bg: 'linear-gradient(135deg,#92400e,#d97706,#f59e0b)',
-    ring: '#fbbf24',
-    shadow: 'rgba(251,191,36,0.55)',
-    textColor: '#fff',
-  }
-  if (isCurrent) return {
-    bg: 'linear-gradient(135deg,#5b21b6,#7c3aed,#a855f7)',
-    ring: '#c084fc',
-    shadow: 'rgba(168,85,247,0.55)',
-    textColor: '#fff',
-  }
-  if (completed) return {
-    bg: 'linear-gradient(135deg,#064e3b,#065f46,#059669)',
-    ring: '#34d399',
-    shadow: 'rgba(52,211,153,0.45)',
-    textColor: '#fff',
-  }
-  return {
-    bg: 'linear-gradient(135deg,#0f0a24,#1a1040)',
-    ring: '#2d1f5e',
-    shadow: 'transparent',
-    textColor: 'rgba(255,255,255,0.2)',
-  }
-}
-
-export default function LevelMap({ currentLevel, completedLevels, friends, userName, onAddFriend }: LevelMapProps) {
+export default function LevelMap({currentLevel,completedLevels,friends,userName,onAddFriend}:LevelMapProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
-  const [activeFriend, setActiveFriend] = useState<string | null>(null)
+  const [activeFriend, setActiveFriend] = useState<string|null>(null)
 
-  useEffect(() => {
-    const node = LEVEL_NODES.find(n => n.level === currentLevel)
-    if (!node || !scrollRef.current) return
-    const containerH = scrollRef.current.clientHeight
-    const targetScroll = node.y - containerH / 2 + 40
-    setTimeout(() => {
-      scrollRef.current?.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' })
-    }, 300)
-  }, [currentLevel])
+  useEffect(()=>{
+    const node=LEVEL_NODES.find(n=>n.level===currentLevel)
+    if(!node||!scrollRef.current) return
+    const targetScroll=node.y-scrollRef.current.clientHeight/2+40
+    setTimeout(()=>scrollRef.current?.scrollTo({top:Math.max(0,targetScroll),behavior:'smooth'}),300)
+  },[currentLevel])
 
-  const friendsByLevel: Record<number, Friend[]> = {}
-  friends.forEach(f => {
-    if (!friendsByLevel[f.currentLevel]) friendsByLevel[f.currentLevel] = []
-    friendsByLevel[f.currentLevel].push(f)
-  })
+  const friendsByLevel:Record<number,Friend[]>={}
+  friends.forEach(f=>{if(!friendsByLevel[f.currentLevel])friendsByLevel[f.currentLevel]=[];friendsByLevel[f.currentLevel].push(f)})
 
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b-2 border-white/10 shrink-0 bg-[#0a0514]/85 backdrop-blur-sm">
+      <div className="flex items-center justify-between px-4 py-3 shrink-0" style={{background:'linear-gradient(180deg,rgba(30,10,94,0.95),rgba(13,8,36,0.9))',borderBottom:'2px solid rgba(139,92,246,0.3)',backdropFilter:'blur(8px)'}}>
         <div>
-          <h2 className="text-white font-black text-base">🗺️ Journey Map</h2>
-          <p className="text-white/40 text-xs font-semibold">Level {currentLevel} of 10</p>
+          <h2 className="text-white font-black text-sm" style={{textShadow:'0 0 12px rgba(167,139,250,0.6)'}}>🗺️ Journey Map</h2>
+          <p className="text-violet-400/60 text-xs font-semibold">Level {currentLevel} of 10</p>
         </div>
-        <div className="flex items-center gap-2">
-          {friends.length > 0 && (
+        <div className="flex items-center gap-3">
+          {friends.length>0&&(
             <div className="flex -space-x-1.5">
-              {friends.slice(0, 4).map(f => (
-                <div key={f.id}
-                  className="w-7 h-7 rounded-full border-2 border-[#0a0514] flex items-center justify-center text-xs font-black text-white"
-                  style={{ background: getFriendColor(f.name) }}
-                  title={f.name}
-                >
-                  {f.name[0]}
-                </div>
+              {friends.slice(0,4).map(f=>(
+                <div key={f.id} className="w-7 h-7 rounded-full border-2 border-[#0d0824] flex items-center justify-center text-[10px] font-black text-white shadow-lg"
+                  style={{background:fc(f.name)}} title={f.name}>{f.name[0]}</div>
               ))}
-              {friends.length > 4 && (
-                <div className="w-7 h-7 rounded-full border-2 border-[#0a0514] bg-white/10 flex items-center justify-center text-[9px] text-white/60 font-bold">
-                  +{friends.length - 4}
-                </div>
-              )}
+              {friends.length>4&&<div className="w-7 h-7 rounded-full border-2 border-[#0d0824] bg-violet-800 flex items-center justify-center text-[9px] text-violet-300 font-black">+{friends.length-4}</div>}
             </div>
           )}
-          <motion.button
-            whileTap={{ scale: 0.92 }}
-            onClick={onAddFriend}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-violet-500/25 border-2 border-violet-400/40 text-violet-300 text-xs font-black"
-          >
-            <span>👥</span> {friends.length === 0 ? 'Add Friends' : 'Add'}
-          </motion.button>
+          <motion.button whileTap={{y:3,boxShadow:'0 1px 0 #3b0764'}} onClick={onAddFriend} className="btn-candy-violet px-3 py-1.5 text-xs">+ Add</motion.button>
         </div>
       </div>
 
-      {/* Map scroll area */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto relative" style={{ minHeight: 0 }}>
-        {/* Starfield */}
+      {/* Map */}
+      <div ref={scrollRef} className="flex-1 overflow-y-auto relative map-bg" style={{minHeight:0}}>
+        {/* Atmospheric stars */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
-          {Array.from({ length: 40 }).map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute w-0.5 h-0.5 rounded-full bg-white"
-              style={{
-                left: `${(i * 37 + 13) % 100}%`,
-                top: `${(i * 53 + 7) % 100}%`,
-                opacity: 0.08 + (i % 5) * 0.04,
-              }}
-              animate={{ opacity: [0.08, 0.35, 0.08] }}
-              transition={{ duration: 2 + (i % 4), repeat: Infinity, delay: i * 0.1 }}
-            />
+          {Array.from({length:20},(_,i)=>(
+            <div key={i} className="absolute text-yellow-200 candy-sparkle" style={{left:`${(i*37)%90+5}%`,top:`${(i*53)%90+5}%`,fontSize:`${8+i%4}px`,opacity:0.3+i%3*0.1,animationDelay:`${(i*0.3)%2}s`}}>✦</div>
           ))}
         </div>
 
-        <div className="relative mx-auto" style={{ width: '100%', height: MAP_HEIGHT + 80 }}>
-          {/* SVG path */}
-          <svg
-            className="absolute inset-0 pointer-events-none"
-            width="100%" height={MAP_HEIGHT + 80}
-            style={{ overflow: 'visible' }}
-          >
+        <div className="relative mx-auto" style={{width:'100%',height:MAP_HEIGHT+80}}>
+          {/* Candy path */}
+          <svg className="absolute inset-0 pointer-events-none" width="100%" height={MAP_HEIGHT+80} style={{overflow:'visible'}}>
             <defs>
-              <filter id="glow-green">
-                <feGaussianBlur stdDeviation="4" result="coloredBlur" />
-                <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
-              <filter id="glow-violet">
-                <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                <feMerge><feMergeNode in="coloredBlur" /><feMergeNode in="SourceGraphic" /></feMerge>
-              </filter>
+              <linearGradient id="pathGrad" x1="0%" y1="100%" x2="0%" y2="0%">
+                <stop offset="0%" stopColor="#fbbf24" stopOpacity="0.6"/>
+                <stop offset="50%" stopColor="#a78bfa" stopOpacity="0.6"/>
+                <stop offset="100%" stopColor="#34d399" stopOpacity="0.6"/>
+              </linearGradient>
             </defs>
-
-            {LEVEL_NODES.slice(0, -1).map((node, i) => {
-              const next = LEVEL_NODES[i + 1]
-              const isCompleted = completedLevels.includes(node.level)
-              const cx1 = node.x, cy1 = node.y + 40
-              const cx2 = next.x, cy2 = next.y + 40
-              const midX = (cx1 + cx2) / 2
-              const midY = (cy1 + cy2) / 2
-
+            {LEVEL_NODES.slice(0,-1).map((node,i)=>{
+              const next=LEVEL_NODES[i+1]; const done=completedLevels.includes(node.level)
               return (
                 <g key={node.level}>
-                  {isCompleted && (
-                    <line
-                      x1={`${cx1}%`} y1={cy1}
-                      x2={`${cx2}%`} y2={cy2}
-                      stroke="#34d399"
-                      strokeWidth={10}
-                      opacity={0.18}
-                      strokeLinecap="round"
-                    />
-                  )}
-                  <line
-                    x1={`${cx1}%`} y1={cy1}
-                    x2={`${cx2}%`} y2={cy2}
-                    stroke={isCompleted ? '#34d399' : '#2d1f5e'}
-                    strokeWidth={isCompleted ? 4.5 : 2.5}
-                    strokeDasharray={isCompleted ? '0' : '10 8'}
-                    strokeLinecap="round"
-                    opacity={0.9}
-                    filter={isCompleted ? 'url(#glow-green)' : undefined}
-                  />
-                  {isCompleted && (
-                    <circle cx={`${midX}%`} cy={midY} r={3.5} fill="#34d399" opacity={0.7} />
-                  )}
+                  <line x1={`${node.x}%`} y1={node.y+40} x2={`${next.x}%`} y2={next.y+40}
+                    stroke={done?'url(#pathGrad)':'rgba(255,255,255,0.08)'} strokeWidth={done?5:3}
+                    strokeDasharray={done?'0':'10 8'} strokeLinecap="round"/>
+                  {/* Dots along path when completed */}
+                  {done&&[0.3,0.6].map((t,di)=>{
+                    const nx1=parseFloat(node.x.toString())/100; const nx2=parseFloat(next.x.toString())/100
+                    const cx=(nx1+(nx2-nx1)*t)*100; const cy=node.y+40+(next.y+40-(node.y+40))*t
+                    return <circle key={di} cx={`${cx}%`} cy={cy} r="4" fill="#fbbf24" opacity="0.7"/>
+                  })}
                 </g>
               )
             })}
           </svg>
 
-          {/* Level nodes */}
-          {LEVEL_NODES.map(({ level, x, y }) => {
-            const isCurrent = level === currentLevel
-            const isCompleted = completedLevels.includes(level)
-            const isLocked = !isCurrent && !isCompleted
-            const isBonus = level % 5 === 0
-            const colors = nodeStyle(isCompleted, isCurrent, isBonus)
-            const levelFriends = friendsByLevel[level] ?? []
-            const nodeSize = isBonus ? 72 : isCurrent ? 66 : 56
+          {/* Nodes */}
+          {LEVEL_NODES.map(({level,x,y})=>{
+            const isCurrent=level===currentLevel; const isCompleted=completedLevels.includes(level)
+            const isLocked=!isCurrent&&!isCompleted; const isBonus=level%5===0
+            const levelFriends=friendsByLevel[level]??[]
+            const size=isBonus?70:isCurrent?60:50
 
             return (
-              <div
-                key={level}
-                className="absolute flex flex-col items-center"
-                style={{ left: `${x}%`, top: y, transform: 'translate(-50%, 0)' }}
-              >
+              <div key={level} className="absolute flex flex-col items-center" style={{left:`${x}%`,top:y,transform:'translate(-50%,0)'}}>
+                {/* Stars above completed */}
+                {isCompleted&&(
+                  <motion.div initial={{scale:0,rotate:-30}} animate={{scale:1,rotate:0}} transition={{type:'spring',bounce:0.6}}
+                    className="text-lg mb-1">{isBonus?'⭐⭐⭐':'⭐'}</motion.div>
+                )}
+
                 {/* Friend avatars */}
                 <AnimatePresence>
-                  {levelFriends.length > 0 && (
-                    <motion.div
-                      initial={{ opacity: 0, y: 8 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex -space-x-1.5 mb-1.5 relative"
-                    >
-                      {levelFriends.slice(0, 3).map((f, fi) => (
-                        <motion.div
-                          key={f.id}
-                          animate={{ y: [0, -5, 0] }}
-                          transition={{ duration: 1.8, repeat: Infinity, delay: fi * 0.3, ease: 'easeInOut' }}
-                          className="relative"
-                          onClick={() => setActiveFriend(activeFriend === f.id ? null : f.id)}
-                        >
-                          <div
-                            className="w-8 h-8 rounded-full border-2 border-[#0a0514] flex items-center justify-center text-xs font-black text-white cursor-pointer"
-                            style={{
-                              background: getFriendColor(f.name),
-                              boxShadow: `0 0 14px ${getFriendColor(f.name)}70`,
-                            }}
-                          >
-                            {f.name[0]}
-                          </div>
+                  {levelFriends.length>0&&(
+                    <motion.div initial={{opacity:0}} animate={{opacity:1}} className="flex -space-x-1 mb-1.5">
+                      {levelFriends.slice(0,3).map((f,fi)=>(
+                        <motion.div key={f.id} animate={{y:[0,-5,0]}} transition={{duration:2,repeat:Infinity,delay:fi*0.4}} className="relative"
+                          onClick={()=>setActiveFriend(activeFriend===f.id?null:f.id)}>
+                          <div className="w-8 h-8 rounded-full border-2 border-[#0d0824] flex items-center justify-center text-[10px] font-black text-white cursor-pointer shadow-lg"
+                            style={{background:fc(f.name),boxShadow:`0 0 10px ${fc(f.name)}88`}}>{f.name[0]}</div>
                           <AnimatePresence>
-                            {activeFriend === f.id && (
-                              <motion.div
-                                initial={{ opacity: 0, scale: 0.8, y: 4 }}
-                                animate={{ opacity: 1, scale: 1, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.8 }}
-                                className="absolute -top-12 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap"
-                              >
-                                <div className="bg-[#1a1040] border-2 border-violet-400/50 rounded-xl px-2.5 py-1.5 shadow-xl card-shadow-violet">
+                            {activeFriend===f.id&&(
+                              <motion.div initial={{opacity:0,y:4,scale:0.9}} animate={{opacity:1,y:0,scale:1}} exit={{opacity:0}}
+                                className="absolute -top-10 left-1/2 -translate-x-1/2 z-20 whitespace-nowrap">
+                                <div className="candy-card px-2.5 py-1.5 shadow-xl">
                                   <p className="text-white text-[10px] font-black">{f.name}</p>
-                                  <p className="text-violet-300 text-[9px] font-semibold">{f.points} pts · L{f.currentLevel}</p>
+                                  <p className="text-violet-400/60 text-[9px]">{f.points}pts · L{f.currentLevel}</p>
                                 </div>
-                                <div className="w-2 h-2 bg-[#1a1040] border-r-2 border-b-2 border-violet-400/50 rotate-45 mx-auto -mt-1" />
                               </motion.div>
                             )}
                           </AnimatePresence>
                         </motion.div>
                       ))}
-                      {levelFriends.length > 3 && (
-                        <div className="w-8 h-8 rounded-full border-2 border-[#0a0514] bg-white/10 flex items-center justify-center text-[9px] text-white/60 font-bold">
-                          +{levelFriends.length - 3}
-                        </div>
-                      )}
                     </motion.div>
                   )}
                 </AnimatePresence>
 
                 {/* YOU label */}
-                {isCurrent && (
-                  <motion.div
-                    animate={{ y: [-4, 4, -4] }}
-                    transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
-                    className="text-[11px] font-black text-violet-300 mb-1 tracking-wide"
-                  >
-                    YOU 👆
+                {isCurrent&&(
+                  <motion.div animate={{y:[-4,4,-4]}} transition={{duration:1.5,repeat:Infinity}}
+                    className="text-[10px] font-black mb-1.5 px-2.5 py-0.5 rounded-full"
+                    style={{background:'linear-gradient(135deg,#a78bfa,#7c3aed)',boxShadow:'0 0 12px rgba(139,92,246,0.7)',textShadow:'0 1px 2px rgba(0,0,0,0.5)',color:'white'}}>
+                    ⬇ YOU
                   </motion.div>
                 )}
 
-                {/* Node circle */}
-                <motion.div
-                  animate={isCurrent
-                    ? { scale: [1, 1.08, 1], boxShadow: [`0 0 0px ${colors.shadow}`, `0 8px 32px ${colors.shadow}`, `0 0 0px ${colors.shadow}`] }
-                    : isCompleted
-                    ? { boxShadow: [`0 0 0px ${colors.shadow}`, `0 0 18px ${colors.shadow}`, `0 0 0px ${colors.shadow}`] }
-                    : {}
-                  }
-                  transition={{ duration: isCurrent ? 1.8 : 3, repeat: Infinity, ease: 'easeInOut' }}
-                  className="relative flex items-center justify-center rounded-full select-none"
-                  style={{
-                    width: nodeSize,
-                    height: nodeSize,
-                    background: colors.bg,
-                    border: `3px solid ${colors.ring}`,
-                    opacity: isLocked ? 0.4 : 1,
-                    boxShadow: isCurrent
-                      ? `0 6px 0 ${colors.shadow}, 0 0 24px ${colors.shadow}`
-                      : isCompleted
-                      ? `0 4px 0 ${colors.shadow}, 0 0 12px ${colors.shadow}`
-                      : 'none',
-                  }}
-                >
-                  <span className={isBonus ? 'text-2xl' : 'text-xl'}>
-                    {isCompleted && !isBonus ? '✅' :
-                     isCompleted && isBonus ? '⭐' :
-                     isCurrent && !isBonus ? '🧘' :
-                     isCurrent && isBonus ? '🏆' : '🔒'}
+                {/* Node */}
+                <div className={`relative flex items-center justify-center rounded-full transition-all ${
+                  isCompleted ? (isBonus?'node-bonus-completed':'node-completed') :
+                  isCurrent  ? (isBonus?'node-bonus-current':'node-current') :
+                  'node-locked'
+                }`} style={{width:size,height:size,opacity:isLocked?0.4:1}}>
+                  <span className={isBonus?'text-2xl':'text-xl'}>
+                    {isCompleted&&!isBonus?'✓':isCompleted?'⭐':isCurrent?'🧘':''}
                   </span>
-
+                  {!isCompleted&&!isCurrent&&<span className="text-[11px] font-black">{level}</span>}
                   {/* Level chip */}
-                  <span
-                    className="absolute -bottom-1.5 -right-1.5 w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-black border-2 border-[#0a0514]"
-                    style={{ background: isBonus ? '#f59e0b' : '#5b21b6', color: '#fff' }}
-                  >
+                  <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-black border-2 border-[#0d0824]"
+                    style={{background:isBonus?'#f59e0b':'#7c3aed',color:'white',boxShadow:isBonus?'0 2px 8px rgba(245,158,11,0.6)':'0 2px 8px rgba(124,58,237,0.6)'}}>
                     {level}
                   </span>
-
-                  {/* Current ring pulse */}
-                  {isCurrent && (
-                    <motion.div
-                      className="absolute inset-0 rounded-full"
-                      style={{ border: `2.5px solid ${colors.ring}` }}
-                      animate={{ scale: [1, 1.5, 1], opacity: [0.7, 0, 0.7] }}
-                      transition={{ duration: 1.8, repeat: Infinity }}
-                    />
+                  {/* Pulse ring for current */}
+                  {isCurrent&&(
+                    <motion.div className="absolute inset-0 rounded-full border-2 border-violet-400"
+                      animate={{scale:[1,1.6],opacity:[0.8,0]}} transition={{duration:1.5,repeat:Infinity}}/>
                   )}
-                </motion.div>
+                </div>
 
-                {/* Label below */}
+                {/* Label */}
                 <div className="mt-2 text-center">
-                  <p className={`text-[10px] font-black ${isCurrent ? 'text-violet-300' : isCompleted ? 'text-emerald-400' : 'text-white/20'}`}>
-                    {isBonus ? '★ BONUS' : `Level ${level}`}
+                  <p className={`text-[9px] font-black ${isCurrent?'text-violet-300':isCompleted?'text-amber-400/70':'text-white/20'}`}>
+                    {isBonus?'⭐ BONUS':`L${level}`}
                   </p>
-                  {(isCurrent || isCompleted) && (
-                    <p className="text-[9px] text-white/30 mt-0.5 font-semibold">
-                      {isBonus ? '1000 pts' : `${level * 50} pts`}
-                    </p>
-                  )}
                 </div>
               </div>
             )
           })}
 
-          {/* Bottom banner */}
+          {/* Chapter 1 divider (between level 5 and 6) */}
+          <div className="absolute left-0 right-0 flex items-center gap-3 px-4" style={{top: LEVEL_NODES[4].y + 80}}>
+            <div className="flex-1 h-px" style={{background:'linear-gradient(90deg,transparent,rgba(251,191,36,0.4),transparent)'}}/>
+            <div className="px-3 py-1 rounded-full text-[10px] font-black text-amber-300" style={{background:'rgba(251,191,36,0.12)',border:'1.5px solid rgba(251,191,36,0.3)'}}>⭐ Chapter 1 Complete</div>
+            <div className="flex-1 h-px" style={{background:'linear-gradient(90deg,transparent,rgba(251,191,36,0.4),transparent)'}}/>
+          </div>
+
+          {/* Bottom decoration */}
           <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-            <div className="flex items-center gap-2 px-4 py-2 rounded-full border-2 border-white/10 bg-white/5">
-              <span className="text-sm">🌱</span>
-              <span className="text-white/25 text-[10px] font-bold">Your yoga journey starts here</span>
+            <div className="flex items-center gap-2 px-5 py-2.5 rounded-full" style={{background:'rgba(139,92,246,0.15)',border:'2px solid rgba(139,92,246,0.3)'}}>
+              <span className="text-lg candy-float">🌱</span>
+              <span className="text-violet-300/60 text-[10px] font-bold">Your journey starts here</span>
             </div>
           </div>
         </div>
