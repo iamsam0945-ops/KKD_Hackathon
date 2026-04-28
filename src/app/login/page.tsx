@@ -6,15 +6,17 @@ import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
-  const [form, setForm] = useState({ phone: '', password: '' })
+  const [phone, setPhone] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault(); setLoading(true); setError('')
     try {
-      const res = await fetch('/api/auth/login', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(form) })
+      const res = await fetch('/api/auth/login', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ phone }),
+      })
       const data = await res.json()
       if (!res.ok) { setError(data.error); return }
       router.push('/dashboard')
@@ -39,26 +41,28 @@ export default function LoginPage() {
             background:'linear-gradient(135deg,#c4b5fd,#f472b6,#fbbf24)',
             WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text'
           }}>Welcome Back!</h1>
-          <p className="text-violet-300/70 text-sm mt-1 font-semibold">Continue your yoga journey</p>
+          <p className="text-violet-300/70 text-sm mt-1 font-semibold">Enter your phone to continue</p>
         </div>
 
         <div className="candy-card p-6">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-violet-300 text-xs font-black uppercase tracking-wider mb-2 block">📱 Phone Number</label>
-              <input type="tel" placeholder="9876543210" value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} required
-                className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold" />
+              <input
+                type="tel" placeholder="9876543210"
+                value={phone} onChange={e => setPhone(e.target.value)}
+                required
+                className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold"
+              />
             </div>
-            <div>
-              <label className="text-violet-300 text-xs font-black uppercase tracking-wider mb-2 block">🔐 Password</label>
-              <div className="relative">
-                <input type={showPassword?'text':'password'} placeholder="••••••••" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} required
-                  className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-4 py-3 pr-11 text-white placeholder-white/25 focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold" />
-                <button type="button" onClick={()=>setShowPassword(v=>!v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-violet-300 hover:text-white transition-colors text-sm">{showPassword?'🙈':'👁️'}</button>
-              </div>
-            </div>
-            {error && <motion.p initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}} className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/30 rounded-xl py-2 px-3 font-semibold">{error}</motion.p>}
-            <motion.button whileTap={{y:5,boxShadow:'0 1px 0 #3b0764'}} type="submit" disabled={loading} className="btn-candy-violet w-full py-4 text-base mt-2 disabled:opacity-50">
+            {error && (
+              <motion.p initial={{opacity:0,y:-8}} animate={{opacity:1,y:0}}
+                className="text-red-400 text-xs text-center bg-red-500/10 border border-red-500/30 rounded-xl py-2 px-3 font-semibold">
+                {error}
+              </motion.p>
+            )}
+            <motion.button whileTap={{y:5,boxShadow:'0 1px 0 #3b0764'}} type="submit" disabled={loading || !phone.trim()}
+              className="btn-candy-violet w-full py-4 text-base mt-2 disabled:opacity-50">
               {loading ? 'Signing in…' : '🎮 Play Now!'}
             </motion.button>
           </form>

@@ -1,18 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import bcrypt from 'bcryptjs'
 import { prisma } from '@/lib/prisma'
 import { signToken } from '@/lib/auth'
 import { cookies } from 'next/headers'
 
 export async function POST(request: NextRequest) {
   try {
-    const { phone, password } = await request.json()
+    const { phone } = await request.json()
 
     const user = await prisma.user.findUnique({ where: { phone } })
-    if (!user) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
-
-    const valid = await bcrypt.compare(password, user.passwordHash)
-    if (!valid) return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 })
+    if (!user) return NextResponse.json({ error: 'No account found with that phone number' }, { status: 401 })
 
     const token = signToken({ userId: user.id, username: user.username })
     const cookieStore = await cookies()
