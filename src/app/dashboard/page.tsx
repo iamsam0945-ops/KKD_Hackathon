@@ -102,6 +102,8 @@ function DashboardContent() {
   }, [requestCardName])
 
   async function handleLogout() {
+    const confirmed = window.confirm('Are you sure you want to exit and log out?')
+    if (!confirmed) return
     await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/')
   }

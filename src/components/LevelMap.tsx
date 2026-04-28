@@ -178,10 +178,22 @@ export default function LevelMap({currentLevel,completedLevels,friends,userName,
 
           {/* Bottom decoration */}
           <div className="absolute bottom-4 left-0 right-0 flex justify-center">
-            <div className="flex items-center gap-2 px-5 py-2.5 rounded-full" style={{background:'rgba(139,92,246,0.15)',border:'2px solid rgba(139,92,246,0.3)'}}>
+            <motion.div
+              animate={{
+                opacity: [0.45, 1, 0.45],
+                boxShadow: [
+                  '0 0 0px rgba(139,92,246,0.2)',
+                  '0 0 16px rgba(139,92,246,0.55)',
+                  '0 0 0px rgba(139,92,246,0.2)',
+                ],
+              }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+              className="flex items-center gap-2 px-5 py-2.5 rounded-full"
+              style={{background:'rgba(139,92,246,0.15)',border:'2px solid rgba(139,92,246,0.3)'}}
+            >
               <span className="text-lg candy-float">🌱</span>
               <span className="text-violet-300/60 text-[10px] font-bold">Your journey starts here</span>
-            </div>
+            </motion.div>
           </div>
         </div>
       </div>
