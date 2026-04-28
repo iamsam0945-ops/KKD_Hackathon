@@ -62,6 +62,7 @@ function DashboardContent() {
   const [addUsername, setAddUsername] = useState('')
   const [addLoading, setAddLoading] = useState(false)
   const [addMsg, setAddMsg] = useState('')
+  const [addFriendLinkCopied, setAddFriendLinkCopied] = useState(false)
 
   const [giftCard, setGiftCard] = useState<CardData | null>(null)
   const [giftLoadingId, setGiftLoadingId] = useState<string | null>(null)
@@ -179,6 +180,19 @@ function DashboardContent() {
     setRequestLoadingId(null)
   }
 
+  async function copyReferralFromAddFriendModal() {
+    if (!user) return
+    try {
+      const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
+      const referralUrl = `${baseUrl}/join/${user.referralToken}`
+      await navigator.clipboard.writeText(referralUrl)
+      setAddFriendLinkCopied(true)
+      setTimeout(() => setAddFriendLinkCopied(false), 1800)
+    } catch {
+      setAddFriendLinkCopied(false)
+    }
+  }
+
   const unscratchedCards = cards.filter(c => c.status === 'UNSCRATCHED')
   const scratchedCards   = cards.filter(c => c.status === 'SCRATCHED')
   const duplicateCards   = scratchedCards.filter(c => c.isDuplicate)
@@ -230,6 +244,24 @@ function DashboardContent() {
               className="candy-card p-6 max-w-sm w-full">
               <h3 className="text-white font-black text-base mb-1">👥 Add Friend</h3>
               <p className="text-violet-400/60 text-xs mb-4 font-semibold">Enter their username to send a request</p>
+
+              <div className="mb-4 rounded-2xl p-3" style={{background:'rgba(0,0,0,0.3)',border:'2px solid rgba(139,92,246,0.25)'}}>
+                <p className="text-violet-300/70 text-[10px] font-black uppercase tracking-wider mb-1.5">Your Referral Link</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-violet-300/60 text-[10px] truncate flex-1 font-mono">
+                    {typeof window !== 'undefined' ? `${window.location.origin}/join/${user?.referralToken ?? ''}` : `/join/${user?.referralToken ?? ''}`}
+                  </span>
+                  <motion.button
+                    whileTap={{y:2}}
+                    onClick={copyReferralFromAddFriendModal}
+                    className={`text-[10px] px-2.5 py-1.5 rounded-xl font-black whitespace-nowrap transition-all ${
+                      addFriendLinkCopied ? 'bg-emerald-500 text-white' : 'btn-candy-violet py-1.5 px-2.5'
+                    }`}
+                  >
+                    {addFriendLinkCopied ? '✅ Copied' : 'Copy'}
+                  </motion.button>
+                </div>
+              </div>
 
               {incoming.length > 0 && (
                 <div className="mb-4 space-y-2 relative z-10">

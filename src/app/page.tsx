@@ -76,7 +76,6 @@ export default function HomePage() {
                 <p className="text-white font-black text-sm">{s.label}</p>
                 <p className="text-violet-300/60 text-xs font-semibold">{s.desc}</p>
               </div>
-              <motion.div animate={{x:[0,3,0]}} transition={{duration:1.5,repeat:Infinity,delay:i*0.3}} className="text-violet-400/40 text-sm">→</motion.div>
             </motion.div>
           ))}
         </div>
