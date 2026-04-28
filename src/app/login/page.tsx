@@ -4,16 +4,7 @@ import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { sanitizePhoneInput } from '@/lib/phone'
-
-const COUNTRY_CODES = [
-  { label: 'India', code: '+91' },
-  { label: 'United States', code: '+1' },
-  { label: 'United Kingdom', code: '+44' },
-  { label: 'United Arab Emirates', code: '+971' },
-  { label: 'Canada', code: '+1' },
-  { label: 'Australia', code: '+61' },
-  { label: 'Singapore', code: '+65' },
-]
+import { COUNTRIES } from '@/lib/countries'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -66,9 +57,9 @@ export default function LoginPage() {
                   onChange={e => setCountryCode(e.target.value)}
                   className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-3 py-3 text-white focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold"
                 >
-                  {COUNTRY_CODES.map((country) => (
-                    <option key={`${country.label}-${country.code}`} value={country.code}>
-                      {country.label} ({country.code})
+                  {COUNTRIES.map((country) => (
+                    <option key={country.iso2} value={country.dialCode}>
+                      {country.flag} {country.name} ({country.dialCode})
                     </option>
                   ))}
                 </select>
