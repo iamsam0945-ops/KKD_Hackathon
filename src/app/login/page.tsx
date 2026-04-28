@@ -51,11 +51,11 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="text-violet-300 text-xs font-black uppercase tracking-wider mb-2 block">📱 Country & Phone Number</label>
-              <div className="grid grid-cols-[130px_1fr] gap-2">
+              <div className="grid grid-cols-[170px_1fr] gap-2 items-stretch">
                 <select
                   value={countryCode}
                   onChange={e => setCountryCode(e.target.value)}
-                  className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-3 py-3 text-white focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold"
+                  className="w-full h-12 bg-black/30 border-2 border-violet-500/40 rounded-2xl px-3 pr-8 text-white focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold appearance-none"
                 >
                   {COUNTRIES.map((country) => (
                     <option key={country.iso2} value={country.dialCode}>
@@ -67,7 +67,7 @@ export default function LoginPage() {
                   type="tel" placeholder="9876543210"
                   value={phone} onChange={e => setPhone(sanitizePhoneInput(e.target.value))}
                   required
-                  className="w-full bg-black/30 border-2 border-violet-500/40 rounded-2xl px-4 py-3 text-white placeholder-white/25 focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold"
+                  className="w-full h-12 bg-black/30 border-2 border-violet-500/40 rounded-2xl px-4 text-white placeholder-white/25 focus:outline-none focus:border-violet-400 transition-all text-sm font-semibold"
                 />
               </div>
             </div>
