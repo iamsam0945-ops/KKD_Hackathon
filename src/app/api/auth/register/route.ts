@@ -6,17 +6,18 @@ import yogaPoses from '@/lib/yogaPoses'
 import { grantScratchCard } from '@/app/api/referral/route'
 import { v4 as uuidv4 } from 'uuid'
 import { cookies } from 'next/headers'
-import { normalizePhone } from '@/lib/phone'
+import { normalizeCountryCode, normalizePhone } from '@/lib/phone'
 
 export async function POST(request: NextRequest) {
   try {
     const { name, phone, countryCode, username, referralToken: incomingReferralToken } = await request.json()
     const normalizedPhone = normalizePhone(phone, countryCode)
+    const normalizedCountryCode = normalizeCountryCode(countryCode)
 
-    if (!name || !phone || !username) {
+    if (!name || !phone || !username || !countryCode) {
       return NextResponse.json({ error: 'All fields are required' }, { status: 400 })
     }
-    if (!normalizedPhone) {
+    if (!normalizedPhone || !normalizedCountryCode) {
       return NextResponse.json({ error: 'Please enter a valid phone number' }, { status: 400 })
     }
 
@@ -32,7 +33,14 @@ export async function POST(request: NextRequest) {
     const myReferralToken = uuidv4().replace(/-/g, '').slice(0, 12)
 
     const user = await prisma.user.create({
-      data: { name, phone: normalizedPhone, username, passwordHash, referralToken: myReferralToken }
+      data: {
+        name,
+        phone: normalizedPhone,
+        countryCode: normalizedCountryCode,
+        username,
+        passwordHash,
+        referralToken: myReferralToken,
+      }
     })
 
     // Seed ALL card templates; update weights/rarity if changed

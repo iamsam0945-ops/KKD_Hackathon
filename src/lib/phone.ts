@@ -2,6 +2,12 @@ export function sanitizePhoneInput(value: string): string {
   return value.replace(/[^\d+]/g, '')
 }
 
+export function normalizeCountryCode(countryCode?: string): string | null {
+  const digits = (countryCode ?? '').replace(/[^\d]/g, '')
+  if (!digits) return null
+  return `+${digits}`
+}
+
 export function normalizePhone(phone: string, countryCode?: string): string | null {
   const trimmedPhone = phone.trim()
   if (!trimmedPhone) return null

@@ -12,13 +12,16 @@ const RARITY_INFO: Record<string,{label:string;glow:string;border:string;bg:stri
   RARE:   { label:'Rare',   glow:'shadow-indigo-500/50',  border:'border-indigo-400/70', bg:'from-indigo-900 to-purple-950' },
   EPIC:   { label:'Epic',   glow:'shadow-amber-400/60',   border:'border-amber-400/80',  bg:'from-amber-900 to-orange-950' },
 }
+const SCRATCH_REVEAL_THRESHOLD = 0.05
 
 export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, onScratched }: ScratchCardProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [revealed, setRevealed] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [scratchPercent, setScratchPercent] = useState(0)
   const hasRevealedRef = useRef(false)   // ref guard — prevents double API calls
   const lastPos = useRef<{x:number;y:number}|null>(null)
+  const isScratchingRef = useRef(false)
   const ri = RARITY_INFO[rarity] ?? RARITY_INFO.COMMON
 
   useEffect(() => {
@@ -37,7 +40,7 @@ export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, 
     ctx.fillStyle='rgba(60,40,100,0.75)'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center'
     ctx.fillText('✨ Scratch to reveal! ✨',canvas.width/2,canvas.height/2-8)
     ctx.font='11px sans-serif'; ctx.fillStyle='rgba(60,40,100,0.5)'
-    ctx.fillText('Any swipe works!',canvas.width/2,canvas.height/2+14)
+    ctx.fillText('Reveal unlocks after ~5% scratch',canvas.width/2,canvas.height/2+14)
   }, [])
 
   function getPos(e:React.MouseEvent|React.TouchEvent,canvas:HTMLCanvasElement) {
@@ -60,7 +63,34 @@ export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, 
     lastPos.current={x,y}
   }
 
-  // Triggered immediately on first touch — clears canvas and calls API
+  function computeScratchedRatio(): number {
+    const canvas = canvasRef.current
+    if (!canvas) return 0
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return 0
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data
+    let transparent = 0
+    let total = 0
+    const step = 8
+    for (let y = 0; y < canvas.height; y += step) {
+      for (let x = 0; x < canvas.width; x += step) {
+        const alphaIdx = (y * canvas.width + x) * 4 + 3
+        if (imageData[alphaIdx] < 20) transparent++
+        total++
+      }
+    }
+    return total > 0 ? transparent / total : 0
+  }
+
+  function tryRevealFromScratch() {
+    const ratio = computeScratchedRatio()
+    setScratchPercent(ratio)
+    if (ratio >= SCRATCH_REVEAL_THRESHOLD) {
+      void handleFullReveal()
+    }
+  }
+
   async function handleFullReveal() {
     if (hasRevealedRef.current) return
     hasRevealedRef.current = true
@@ -76,10 +106,27 @@ export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, 
 
   function onStart(e:React.MouseEvent|React.TouchEvent) {
     if ('touches' in e) e.preventDefault()
+    isScratchingRef.current = true
     lastPos.current = null
     const pos = getPos(e, canvasRef.current!)
     drawScratch(pos.x, pos.y)
-    handleFullReveal()   // ← reveal on FIRST touch, always
+    tryRevealFromScratch()
+  }
+
+  function onMove(e:React.MouseEvent|React.TouchEvent) {
+    if (!isScratchingRef.current || revealed) return
+    if ('touches' in e) e.preventDefault()
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const pos = getPos(e, canvas)
+    drawScratch(pos.x, pos.y)
+    tryRevealFromScratch()
+  }
+
+  function onEnd() {
+    isScratchingRef.current = false
+    lastPos.current = null
+    if (!revealed) tryRevealFromScratch()
   }
 
   return (
@@ -105,8 +152,19 @@ export default function ScratchCard({ cardId, emoji, name, rarity, isDuplicate, 
           width={256} height={320}
           className="absolute inset-0 w-full h-full rounded-3xl cursor-pointer touch-none"
           onMouseDown={onStart}
+          onMouseMove={onMove}
+          onMouseUp={onEnd}
+          onMouseLeave={onEnd}
           onTouchStart={onStart}
+          onTouchMove={onMove}
+          onTouchEnd={onEnd}
         />
+      )}
+
+      {!revealed && (
+        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full bg-black/40 border border-white/20 px-2 py-0.5 text-[10px] text-white/80 font-semibold pointer-events-none">
+          {Math.floor(scratchPercent * 100)}% scratched
+        </div>
       )}
 
       {/* Loading indicator */}
